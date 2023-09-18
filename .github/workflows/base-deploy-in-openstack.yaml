@@ -1,0 +1,41 @@
+name: Terraform Deploy
+
+on:
+  push:
+    branches:
+      - main # Configure a branch que acionará o workflow
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set Up Terraform
+      uses: hashicorp/setup-terraform@v1
+
+
+    - name: Deploy Terraform
+      run: |
+        directories=("deploy-networks-eir flavors-eir routers-eir")
+        for distro in $directories
+        do
+          if [[ -f "${dir}main.tf" ]]; then
+            echo "Deploying in directory: $dir"
+            cd "$dir"
+            terraform init \
+              -backend-config="bucket=${BUCKET_NAME}" \
+              -backend-config="key=tf-openstack/terraform.tfstate" \
+              -backend-config="region=us-east-1"
+            terraform plan -out=tfplan
+            terraform apply -auto-approve tfplan
+            cd ..
+          fi
+        done
+
