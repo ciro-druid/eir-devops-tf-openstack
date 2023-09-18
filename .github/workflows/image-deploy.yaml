@@ -23,7 +23,7 @@ jobs:
     - name: Deploy Terraform
       run: |
         directories=("deploy-image deploy-vm")
-        for distro in $directories
+        for dir in $directories
         do
           if [[ -f "${dir}main.tf" ]]; then
             echo "Deploying in directory: $dir"
