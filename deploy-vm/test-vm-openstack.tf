@@ -7,7 +7,8 @@ data "openstack_images_image_ids_v2" "custom_image" {
 
 
 resource "openstack_compute_instance_v2" "example_vm" {
-  name      = "example-vm"
+  name      = "eir-vm"
+  count    = 20
 #  image_id  = "8d4dbaa2-ff12-4e9a-849b-06f0cf6d9535"
 #  image_id  = "data.openstack_images_image_ids_v2.custom_image.ids[0]"
 # image_id    = data.openstack_images_image_ids_v2.custom_image.id

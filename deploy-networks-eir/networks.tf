@@ -60,7 +60,7 @@ resource "openstack_networking_subnet_v2" "eir_lab_cdr_subnet" {
 
 resource "openstack_networking_subnet_v2" "eir_lab_dbrep_subnet" {
   network_id = openstack_networking_network_v2.eir_lab_dbrep_net.id
-  cidr       = "192.168.6.0/24"
+  cidr       = "192.168.7.0/24"
   gateway_ip = null
   enable_dhcp = false
 }
