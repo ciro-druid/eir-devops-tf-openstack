@@ -20,6 +20,22 @@ jobs:
       uses: hashicorp/setup-terraform@v1
 
 
+    - name: Set Up OpenStack deploy API
+      run: |
+        export OS_AUTH_URL= ${{ secrets.OS_AUTH_URL }}
+        export OS_IDENTITY_API_VERSION=3
+        export OS_INTERFACE=public
+        export OS_PASSWORD= ${{ secrets.OS_PASSWORD }}
+        export OS_PASSWORD_INPUT= ${{ secrets.OS_PASSWORD_INPUT }}
+        export OS_PROJECT_DOMAIN_ID=default
+        export OS_PROJECT_ID= ${{ secrets.OS_PROJECT_ID }}
+        export OS_PROJECT_NAME=admin
+        export OS_REGION_NAME=IAD3
+        export OS_USERNAME= ${{ secrets.OS_USERNAME }}
+        export OS_USER_DOMAIN_NAME=Default
+
+
+
     - name: Deploy Terraform
       run: |
         directories=("deploy-networks-eir flavors-eir routers-eir")
