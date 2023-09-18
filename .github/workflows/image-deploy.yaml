@@ -1,4 +1,4 @@
-name: Terraform Deploy
+name: Image and VM Deploy
 
 on:
   workflow_dispatch:

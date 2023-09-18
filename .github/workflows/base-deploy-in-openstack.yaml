@@ -1,4 +1,4 @@
-name: Terraform Deploy
+name: Base structure  Deploy
 
 on:
   workflow_dispatch:
@@ -25,7 +25,7 @@ jobs:
         directories=("deploy-networks-eir flavors-eir routers-eir")
         for dir in $directories
         do
-          if [[ -f "${dir}main.tf" ]]; then
+          if [[ -f "${dir}/main.tf" ]]; then
             echo "Deploying in directory: $dir"
             cd "$dir"
             terraform init \
