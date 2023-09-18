@@ -1,9 +1,8 @@
 name: Terraform Deploy
 
 on:
-  push:
-    branches:
-      - main # Configure a branch que acionará o workflow
+  workflow_dispatch:
+
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -23,7 +22,9 @@ jobs:
 
     - name: Deploy Terraform
       run: |
-        for dir in */; do
+        directories=("deploy-image deploy-vm")
+        for distro in $directories
+        do
           if [[ -f "${dir}main.tf" ]]; then
             echo "Deploying in directory: $dir"
             cd "$dir"
