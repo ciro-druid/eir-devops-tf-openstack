@@ -6,6 +6,12 @@ on:
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  OS_AUTH_URL: ${{ secrets.OS_AUTH_URL }}
+  OS_PASSWORD: ${{ secrets.OS_PASSWORD }}
+  OS_PASSWORD_INPUT: ${{ secrets.OS_PASSWORD_INPUT }}
+  OS_PROJECT_ID: ${{ secrets.OS_PROJECT_ID }}
+  OS_USERNAME: ${{ secrets.OS_USERNAME }}
+
 
 
 jobs:
@@ -23,7 +29,7 @@ jobs:
 
     - name: Set Up OpenStack deploy API
       run: |
-        export OS_AUTH_URL= ${{ secrets.OS_AUTH_URL }}
+        export OS_AUTH_URL= "$OS_AUTH_URL" 
         export OS_IDENTITY_API_VERSION=3
         export OS_INTERFACE=public
         export OS_PASSWORD= ${{ secrets.OS_PASSWORD }}
