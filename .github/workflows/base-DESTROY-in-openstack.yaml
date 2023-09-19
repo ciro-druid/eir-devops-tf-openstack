@@ -55,8 +55,7 @@ jobs:
               -backend-config="bucket=${BUCKET_NAME}" \
               -backend-config="key=tf-openstack/terraform.tfstate" \
               -backend-config="region=us-east-1"
-            terraform plan -out=tfplan
-            terraform destroy -auto-approve tfplan
+            terraform destroy -auto-approve 
             cd ..
           fi
         done
