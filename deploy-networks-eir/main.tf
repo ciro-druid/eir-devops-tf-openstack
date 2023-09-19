@@ -20,5 +20,9 @@ provider "openstack" {
 
 
 terraform {
-  backend "local" {}
+  backend "s3" {
+    bucket = "openstack-terraform-state"
+    key    = "deploy-networks-eir/tf-state"
+    region = "us-east-1"
+  }
 }
