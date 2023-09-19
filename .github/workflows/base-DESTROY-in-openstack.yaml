@@ -15,7 +15,7 @@ env:
 
 
 jobs:
-  deploy:
+  destroy:
     runs-on: ubuntu-latest
 
     steps:
