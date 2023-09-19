@@ -43,7 +43,7 @@ jobs:
 
 
 
-    - name: Deploy Terraform
+    - name: Destroy Terraform
       run: |
         directories=("deploy-networks-eir flavors-eir routers-eir")
         for dir in $directories
@@ -53,7 +53,7 @@ jobs:
             cd "$dir"
             terraform init \
               -backend-config="bucket=${BUCKET_NAME}" \
-              -backend-config="key=tf-openstack/terraform.tfstate" \
+              -backend-config="key=${directories}/terraform.tfstate" \
               -backend-config="region=us-east-1"
             terraform destroy -auto-approve 
             cd ..
