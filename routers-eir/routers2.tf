@@ -6,7 +6,7 @@ resource "openstack_networking_router_v2" "router01" {
 
 # Fetching the subnet ID of the public network
 data "openstack_networking_subnet_v2" "Internet" {
- name = "Internet"
+  name = "Internet"
   #network_id = "Internet"
 }
 
