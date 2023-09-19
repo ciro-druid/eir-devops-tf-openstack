@@ -19,3 +19,6 @@ provider "openstack" {
 }
 
 
+terraform {
+  backend "local" {}
+}

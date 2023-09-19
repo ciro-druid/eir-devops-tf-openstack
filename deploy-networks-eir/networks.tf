@@ -32,23 +32,23 @@ resource "openstack_networking_subnet_v2" "eir_lab_ssh_subnet" {
 }
 
 resource "openstack_networking_subnet_v2" "eir_lab_om_subnet" {
-  network_id = openstack_networking_network_v2.eir_lab_om_net.id
-  cidr       = "192.168.2.0/24"
-  gateway_ip = null
+  network_id  = openstack_networking_network_v2.eir_lab_om_net.id
+  cidr        = "192.168.2.0/24"
+  gateway_ip  = null
   enable_dhcp = false
 }
 
 resource "openstack_networking_subnet_v2" "eir_lab_sig_subnet" {
-  network_id = openstack_networking_network_v2.eir_lab_sig_net.id
-  cidr       = "192.168.3.0/24"
-  gateway_ip = null
+  network_id  = openstack_networking_network_v2.eir_lab_sig_net.id
+  cidr        = "192.168.3.0/24"
+  gateway_ip  = null
   enable_dhcp = false
 }
 
 resource "openstack_networking_subnet_v2" "eir_lab_bill_subnet" {
-  network_id = openstack_networking_network_v2.eir_lab_bill_net.id
-  cidr       = "192.168.4.0/24"
-  gateway_ip = null
+  network_id  = openstack_networking_network_v2.eir_lab_bill_net.id
+  cidr        = "192.168.4.0/24"
+  gateway_ip  = null
   enable_dhcp = false
 }
 
@@ -59,8 +59,8 @@ resource "openstack_networking_subnet_v2" "eir_lab_cdr_subnet" {
 }
 
 resource "openstack_networking_subnet_v2" "eir_lab_dbrep_subnet" {
-  network_id = openstack_networking_network_v2.eir_lab_dbrep_net.id
-  cidr       = "192.168.7.0/24"
-  gateway_ip = null
+  network_id  = openstack_networking_network_v2.eir_lab_dbrep_net.id
+  cidr        = "192.168.7.0/24"
+  gateway_ip  = null
   enable_dhcp = false
 }
