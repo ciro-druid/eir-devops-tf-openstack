@@ -28,7 +28,7 @@ jobs:
 
     - name: Set Up OpenStack deploy API
       run: |
-        export OS_AUTH_URL= ${{ secrets.OS_AUTH_URL }}
+        export OS_AUTH_URL= "$OS_AUTH_URL"
         export OS_IDENTITY_API_VERSION=3
         export OS_INTERFACE=public
         export OS_PASSWORD= ${{ secrets.OS_PASSWORD }}
