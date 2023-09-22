@@ -14,7 +14,7 @@ resource "openstack_images_image_v2" "centos79" {
 #  status    = "accepted"
 #}
 resource "openstack_images_image_v2" "EIR-BE-IMG" {
-  name             = "Centos79"
+  name             = "EIR-BE-IMG"
   local_file_path  = "/ftp-comviva/IMAGES/Comviva_L2_EIR-BE_CentOS_7.9.qcow2"
 
   container_format = "bare"
@@ -23,8 +23,8 @@ resource "openstack_images_image_v2" "EIR-BE-IMG" {
 
 }
 
-resource "openstack_images_image_v2" "centos79" {
-  name             = "Centos79"
+resource "openstack_images_image_v2" "IMDB-IMG" {
+  name             = "IMDB-IMG"
   local_file_path  = "/ftp-comviva/IMAGES/Comviva_L2_IMDB_CentOS_7.9.qcow2"
 
   container_format = "bare"
