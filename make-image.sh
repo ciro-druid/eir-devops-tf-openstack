@@ -366,6 +366,7 @@ EOF
     echo MOVE IMAGE to  $FOLDER/$IMAGE_NAME.qcow2
     sudo mv $FOLDER/$IMAGE_NAME.qcow2 $FOLDER/$IMAGE_NAME.qcow2- || bye 1
     sudo qemu-img convert -c -O qcow2 $FOLDER/$IMAGE_NAME.qcow2- $FOLDER/$IMAGE_NAME.qcow2 || bye 1
+    sudo cp  $FOLDER/$IMAGE_NAME.qcow2 /    /ftp-comviva/IMAGES/UBU || bye 1
     sudo rm -f $FOLDER/$IMAGE_NAME.qcow2- || bye 1
 #    md5sum $FOLDER/$IMAGE_NAME.qcow2 | sed 's/ .*//' >$FOLDER/$IMAGE_NAME.qcow2.md5
 done
