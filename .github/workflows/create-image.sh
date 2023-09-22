@@ -23,7 +23,7 @@ jobs:
       - name: Deploy to EC2
         run: |
           aws sts get-caller-identity
-          aws ssm start-session --target i-0223ed54de2f64fd6 --region us-east-1 --document-name AWS-StartInteractiveCommand --parameters command="sudo su - ubuntu -c ./pipeline-CI-atualiza-monitoria.sh"
+          aws ssm start-session --target i-0223ed54de2f64fd6 --region us-east-1 --document-name AWS-StartInteractiveCommand --parameters command="sudo su - ubuntu -c /eir_images/L2/make-image.sh "
         env:
           AWS_EC2_METADATA_DISABLED: true
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
