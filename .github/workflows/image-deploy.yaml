@@ -21,7 +21,7 @@ jobs:
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Set Up Terraform
       uses: hashicorp/setup-terraform@v1
@@ -47,7 +47,7 @@ jobs:
 
     - name: Deploy Terraform
       run: |
-        directories=("deploy-image deploy-vm")
+        directories=("deploy-image")
         for dir in $directories
         do
           if [[ -f "${dir}main.tf" ]]; then
