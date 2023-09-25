@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd  /eir_images/L2/
+
 unset CURRENT_MOUNT_POINT
 function bye {
     [ -n "$CURRENT_MOUNT_POINT" ] && sudo umount $CURRENT_MOUNT_POINT
