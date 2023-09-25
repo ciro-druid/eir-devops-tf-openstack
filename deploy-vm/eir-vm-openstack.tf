@@ -45,7 +45,7 @@ data "openstack_images_image_ids_v2" "imdb_image" {
 ##### VMs
 resource "openstack_compute_instance_v2" "EIR-BE" {
   name  = "EIR-BE-vm"
-  count = 29
+  count = 2
   image_name = data.openstack_images_image_ids_v2.eir_be_image.name
   flavor_name  = "eir_be_flavor"
   network {
