@@ -1,0 +1,199 @@
+heat_template_version: 2016-10-14
+
+description: RDBMS VNFC DEPLOY TEMPLATE
+
+parameters:
+
+  ###################################################
+  ## General Parameters
+  ###################################################
+  vnfi_id:
+    type: string
+    description: VNFI name
+    label: VNFI_Name
+    constraints:
+    - length: { min: 1, max: 16 }
+    - allowed_pattern: "[A-Za-z][A-Za-z_0-9-]*"
+  keypair:
+    type: string
+    label: KeyPair
+    description: SSH keypayr to inject in all servers
+  security_group_id:
+    type: string
+    label: SecurityGroupID
+    description: Security group UUID
+  timesync:
+    type: string
+    label: NTP Server List
+    description: NTP server list.
+  cca_config:
+    type: string
+    label: CCA Configuration
+    description: CCA configuration
+  external_endpoints:
+    type: string
+    label: External Endpoints
+    description: String con el contenido JSON de extenal endpoints
+  develop:
+    type: boolean
+    default: false
+    description: Only for testing purpose.
+  trap_dest_addrs:
+    type: string
+    label: Trap Destination Address List
+    description: IP where the management system should send traps.
+  vnfcnames:
+    type: json
+    label: Vnfc Names
+    description: Vnfc names renaming
+  networks:
+    type: json
+    label: Local Networks
+    description: This POP networks information
+  inter_site_nets:
+    type: string
+    label: VNF Networks Attributes
+    description: name, site, cidr and gateway of every inter-site network
+  flavors:
+    type: json
+    label: VNF Flavors
+    description: JSON defining flavors names and parameters.
+  cca_ignite_multicast_group:
+    type: string
+    label: CCA Multicast Address
+    default: 228.10.10.160
+    description: UDP multicast address to be used by CCA ignite cluster
+  mgms_ignite_multicast_group:
+    type: string
+    label: MGMS Multicast Address
+    default: 231.1.1.7
+    description: UDP multicast address to be used by MGMS ignite cluster
+  cdr_ignite_multicast_group:
+    type: string
+    label: CDR Multicast Address
+    default: 231.0.1.241
+    description: UDP multicast address to be used by CDR ignite cluster
+
+  ###################################################
+  ## MGMS Parameters
+  ###################################################
+  mgms_image:
+    type: string
+    label: MGMS Imgage
+    description: Image name or UUID.
+  mgms_server_group_id:
+    type: string
+    label: MGMS Server Group UUID
+    description: MGMS Server Group UUID (affinity)
+  mgms_count:
+    type: number
+    label: MGMS Count
+    description: How many MGMS instances to create.
+    constraints:
+      - range: { min: 0 }
+  mgms_volume_size:
+    type: number
+    label: MGMS Volume Size
+    description: MGMS volume size
+  mgms_nodes:
+    type: json
+    label: MGMS VM Attribute List
+    description: Array of nodes parameters, one for each index in HEAT ResourceGroup.
+  mgms_all_nodes:
+    type: string
+    label: Addresses of all existing MGMS nodes.
+    description: Array of addresses, one for heach MGMS node.
+  tslee_all_nodes:
+    type: string
+    label: Addresses of all existing TSLEE nodes.
+    description: Array of addresses, one for heach TSLEE nodes.
+
+conditions:
+
+  rdbms_count_is_grater_than_zero:
+    not:
+      equals:
+      - { get_param: rdbms_count }
+      - 0
+
+resources:
+
+  ###################################################
+  ## Workaround and other heat values
+  ###################################################
+  develop_flag:
+    type: OS::Heat::Value
+    properties:
+      type: boolean
+      value:
+        yaql:
+          expression: bool($.data.value)
+          data:
+            value: { get_param: develop }
+
+  cca_local_quorum:
+    type: OS::Heat::Value
+    properties:
+      type: number
+      value:
+        yaql:
+          expression: ( ( int($.data.value0) + int($.data.value1) ) / 2 ) + 1
+          data:
+            value0: 2
+            value1: 2
+
+
+  ###################################################
+  ## Call to MGMS HEAT Template
+  ###################################################
+  mgms_group:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count:  { get_param: mgms_count }
+      resource_def:
+        type: ../VNFC-Files/MGMS-VNFC.yaml
+        properties:
+          vnfi_id: { get_param: vnfi_id }
+          index: '%index%'
+          security_group: { get_param: security_group_id }
+          keypair: { get_param: keypair }
+          timesync: { get_param: timesync }
+          cca_config: { get_param: cca_config }
+          mgms_all_nodes: { get_param: mgms_all_nodes }
+          image: { get_param: mgms_image }
+          flavor: { get_param: [ flavors, MGMS, name ] }
+          om_net: { get_param: [ networks, OM, netname ] }
+          om_subnet: { get_param: [ networks, OM, subnetname ] }
+          om_mode: { get_param: [ networks, OM, mode ] }
+          om_netaddr: { get_param: [ networks, OM, netaddr ] }
+          om_prefix: { get_param: [ networks, OM, prefix ] }
+          om_gateway: { get_param: [ networks, OM, gateway ] }
+          cdr_net: { get_param: [ networks, CDR, netname ] }
+          cdr_subnet: { get_param: [ networks, CDR, subnetname ] }
+          cdr_netaddr: { get_param: [ networks, CDR, netaddr ] }
+          cdr_prefix: { get_param: [ networks, CDR, prefix ] }
+          bill_net: { get_param: [ networks, BILL, netname ] }
+          bill_subnet: { get_param: [ networks, BILL, subnetname ] }
+          bill_mode: { get_param: [ networks, BILL, mode ] }
+          bill_netaddr: { get_param: [ networks, BILL, netaddr ] }
+          bill_prefix: { get_param: [ networks, BILL, prefix ] }
+          bill_gateway: { get_param: [ networks, BILL, gateway ] }
+          ssh_net: { get_param: [ networks, SSH, netname ] }
+          ssh_subnet: { get_param: [ networks, SSH, subnetname ] }
+          ssh_mode: { get_param: [ networks, SSH, mode ] }
+          ssh_netaddr: { get_param: [ networks, SSH, netaddr ] }
+          ssh_prefix: { get_param: [ networks, SSH, prefix ] }
+          ssh_gateway: { get_param: [ networks, SSH, gateway ] }
+          external_endpoints: { get_param: external_endpoints }
+          volume_size: { get_param: mgms_volume_size }
+          server_group: { get_param: mgms_server_group_id }
+          develop: { get_attr: [ develop_flag, value ] }
+          trap_dest_addrs: { get_param: trap_dest_addrs }
+          inter_site_nets: { get_param: inter_site_nets }
+          cca_ignite_multicast_group: { get_param: cca_ignite_multicast_group }
+          mgms_ignite_multicast_group: { get_param: mgms_ignite_multicast_group }
+          cdr_ignite_multicast_group: { get_param: cdr_ignite_multicast_group }
+          nodes: { get_param: mgms_nodes }
+          tslee_nodes: { get_param: tslee_all_nodes }
+          networks: { get_param: networks }
+          vnfcnames: {get_param: vnfcnames}

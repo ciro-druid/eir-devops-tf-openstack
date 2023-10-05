@@ -87,9 +87,10 @@ do
     sudo mkdir -p /mnt/$FOLDER || bye 1
   #  sudo guestmount -i -a $FOLDER/$IMAGE_NAME.qcow2 /mnt/$FOLDER || bye 1
   #### NEW IMAGE MOUNT 
-  modprobe nbd max_part=8
-qemu-nbd --connect=/dev/nbd0 /eir_images/Comviva_L2_MGMS_CentOS_7.9.qcow2
-mount /dev/nbd0p1 /mnt/$FOLDER
+sudo   modprobe nbd max_part=8
+sudo qemu-nbd --connect=/dev/nbd0 /eir_images/Comviva_L2_MGMS_CentOS_7.9.qcow2
+sudo mount /dev/nbd0p1 /mnt/$FOLDER
+  [ $? -gt 0 ] || echo NOT MOUTiNG && bye 1
 
     export CURRENT_MOUNT_POINT=/mnt/$FOLDER
 

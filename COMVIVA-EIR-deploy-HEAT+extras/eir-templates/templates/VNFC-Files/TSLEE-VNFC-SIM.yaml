@@ -1,0 +1,822 @@
+heat_template_version: 2016-10-14
+
+description: TSLEE VNFC deployment template
+
+parameter_groups:
+
+parameters:
+  vnfc_group:
+    type: string
+    default: Frontends
+  vnfi_id:
+    type: string
+    description: VNFI name
+  index:
+    type: number
+    description: Heat ResourceGroup index.
+  security_group:
+    type: string
+    description: Security Group (firewall rules) for all servers
+  keypair:
+    type: string
+    description: SSH keypayr to inject in all servers
+  site_code:
+    type: string
+    description: Short site name. For exampl SP, RJ, AMBA.
+    default: AR
+  #server_group:
+  #  type: string
+  #  description: server group
+  time_zone_code:
+    type: string
+  timesync:
+    type: string
+    description: NTP server list.
+  cca_config:
+    type: string
+    description: JSON of the form {"sites":[{"name":"siteName","cidr":"192.168.3.0/24","virtualIp":"192.168.3.50"},...]}
+  image:
+    type: string
+    description: Image name or UUID.
+  flavor:
+    type: string
+    description: Flavor name or UUID.
+  om_net:
+    type: string
+    description: OM network
+  om_subnet:
+    type: string
+    description: OM network
+  om_mode:
+    type: string
+    description: static or dhcp
+    constraints:
+    - allowed_values:
+      - static
+      - dhcp
+  om_netaddr:
+    type: string
+    description: OM network address.
+  om_prefix:
+    type: number
+    description: OM network netmask prefix.
+  om_gateway:
+    type: string
+    description: OM network default gateway.
+  sig_net:
+    type: string
+    description: Signaling network
+  sig_subnet:
+    type: string
+    description: Signaling network
+  sig_mode:
+    type: string
+    description: static or dhcp
+    constraints:
+    - allowed_values:
+      - static
+      - dhcp
+  sig_netaddr:
+    type: string
+    description: Signaling network address.
+  sig_prefix:
+    type: number
+    description: Signaling network netmask prefix.
+  sig_gateway:
+    type: string
+    description: Signaling network gateway.
+  sig2_net:
+    type: string
+    description: Signaling network
+  sig2_subnet:
+    type: string
+    description: Signaling network
+  sig2_mode:
+    type: string
+    description: static or dhcp
+    constraints:
+    - allowed_values:
+      - static
+      - dhcp
+  sig2_netaddr:
+    type: string
+    description: Signaling network address.
+  sig2_prefix:
+    type: number
+    description: Signaling network netmask prefix.
+  sig2_gateway:
+    type: string
+    description: Signaling network gateway.
+  cdr_net:
+    type: string
+    description: Internal CDR network
+  cdr_subnet:
+    type: string
+    description: Internal CDR network IP subnet
+  cdr_netaddr:
+    type: string
+    description: Internal CDR network address.
+  cdr_prefix:
+    type: number
+    description: Internal CDR network netmask prefix.
+  ssh_net:
+    type: string
+    description: OM ssh network
+  ssh_subnet:
+    type: string
+    description: OM ssh network
+  ssh_mode:
+    type: string
+    description: static or dhcp
+    constraints:
+    - allowed_values:
+      - static
+      - dhcp
+  ssh_netaddr:
+    type: string
+    description: OM ssh network address.
+  ssh_prefix:
+    type: number
+    description: OM ssh network netmask prefix.
+  ssh_gateway:
+    type: string
+    description: OM ssh network gateway.
+  develop:
+    type: boolean
+    default: false
+    description: Only for testing purpose.
+  inter_site_nets:
+    type: string
+    description: name, site, cidr and gateway of every inter-site network
+  do_signaling_routes:
+    type: string
+    description: false or true if signaling ip routes need to be done.
+  local_quorum:
+    type: number
+  cca_ignite_multicast_group:
+    type: string
+    description: UDP multicast address to be used by CCA ignite cluster
+  mgms_ignite_multicast_group:
+    type: string
+    description: UDP multicast address to be used by MGMS ignite cluster
+  cdr_ignite_multicast_group:
+    type: string
+    description: UDP multicast address to be used by CDR ignite cluster
+  nodes:
+    type: json
+    description: Array of node parameters, one for each index in HEAT ResourceGroup.
+  networks:
+    type: json
+    label: Local Networks
+    description: This POP networks information
+  unica:
+    type: boolean
+    description: Set to True if deploying in UNICA environment
+    default: false
+  tslee_dynconf_cmd:
+    type: string
+    description: Comando para obtener el update
+  vnfcnames:
+    type: json
+    label: Vnfc Names
+    description: Vncf names renaming
+
+conditions:
+
+  is_unica:
+    equals:
+    - { get_param: unica }
+    - True
+
+  is_not_unica:
+    not:
+      equals:
+      - { get_param: unica }
+      - True
+
+  ssh_is_static_unica:
+    and:
+    - equals:
+      - { get_param: ssh_mode }
+      - static
+    - is_unica
+
+  ssh_is_static_not_unica:
+    and:
+    - equals:
+      - { get_param: ssh_mode }
+      - static
+    - is_not_unica
+
+  ssh_is_dhcp_unica:
+    and:
+    - equals:
+      - { get_param: ssh_mode }
+      - dhcp
+    - is_unica
+
+  ssh_is_dhcp_not_unica:
+    and:
+    - equals:
+      - { get_param: ssh_mode }
+      - dhcp
+    - is_not_unica
+
+  with_floating_dhcp_unica:
+    and:
+      - equals:
+        - { get_param: [ networks, PUBLIC, floating ] }
+        - True
+      - ssh_is_dhcp_unica
+
+  with_floating_dhcp_not_unica:
+    and:
+      - equals:
+        - { get_param: [ networks, PUBLIC, floating ] }
+        - True
+      - ssh_is_dhcp_not_unica
+
+  with_floating_static_unica:
+    and:
+      - equals:
+        - { get_param: [ networks, PUBLIC, floating ] }
+        - True
+      - ssh_is_static_unica
+
+  with_floating_static_not_unica:
+    and:
+      - equals:
+        - { get_param: [ networks, PUBLIC, floating ] }
+        - True
+      - ssh_is_static_not_unica
+
+  om_is_static_unica:
+    and:
+    - equals:
+      - { get_param: om_mode }
+      - static
+    - is_unica
+
+  om_is_static_not_unica:
+    and:
+    - equals:
+      - { get_param: om_mode }
+      - static
+    - is_not_unica
+
+  om_is_dhcp_unica:
+    and:
+    - equals:
+      - { get_param: om_mode }
+      - dhcp
+    - is_unica
+
+  om_is_dhcp_not_unica:
+    and:
+    - equals:
+      - { get_param: om_mode }
+      - dhcp
+    - is_not_unica
+
+  sig_is_static_unica:
+    and:
+    - equals:
+      - { get_param: sig_mode }
+      - static
+    - is_unica
+
+  sig_is_static_not_unica:
+    and:
+    - equals:
+      - { get_param: sig_mode }
+      - static
+    - is_not_unica
+
+  sig_is_dhcp_unica:
+    and:
+    - equals:
+      - { get_param: sig_mode }
+      - dhcp
+    - is_unica
+
+  sig_is_dhcp_not_unica:
+    and:
+    - equals:
+      - { get_param: sig_mode }
+      - dhcp
+    - is_unica
+
+  sig2_is_static_unica:
+    and:
+    - equals:
+      - { get_param: sig2_mode }
+      - static
+    - is_unica
+
+  sig2_is_static_not_unica:
+    and:
+    - equals:
+      - { get_param: sig2_mode }
+      - static
+    - is_not_unica
+
+  sig2_is_dhcp_unica:
+    and:
+    - equals:
+      - { get_param: sig2_mode }
+      - dhcp
+    - is_unica
+
+  sig2_is_dhcp_not_unica:
+    and:
+    - equals:
+      - { get_param: sig2_mode }
+      - dhcp
+    - is_unica
+
+resources:
+
+  padded_instance_number:
+    type: OS::Heat::Value
+    properties:
+      type: string
+      value:
+        yaql:
+          expression: selectCase(str($.data).len() = 1, str($.data).len() = 2).switchCase(format("00{0}",$.data),format("0{0}",$.data),str($.data))
+          data: { get_param: [ nodes, get_param: index, instance ] }
+
+  launch_script:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config: |
+        #!/bin/bash
+        nohup bash /mcom/.initialize/initialize.sh &
+        exit 0
+
+  files:
+    type: OS::Heat::CloudConfig
+    properties:
+      cloud_config:
+        debug: True
+        ssh_pwauth: True
+        disable_root: false
+        chpasswd:
+          list: |
+            root:comviva01
+            centos:comviva01
+          expire: false
+        runcmd:
+        - sed -i'.orig' -e's/without-password/yes/' /etc/ssh/sshd_config
+        - systemctl restart sshd
+        - chmod -R 777 /mcom/
+        write_files:
+#        - path: /mcom/.initialize/initialize-custom-00-pre.sh
+#          content: |
+#            #!/bin/bash
+#            mkdir -p /mnt/mcom/mgms/mgms-agent/bam/wrk
+#            chmod 777 /mnt/mcom/mgms/mgms-agent/bam/wrk
+#            mkdir -p /mnt/mcom/mgms/mgms-agent/bam/err
+#            chmod 777 /mnt/mcom/mgms/mgms-agent/bam/err
+#            mkdir -p /mnt/mcom/mgms/mgms-agent/bam/snt
+#            chmod 777 /mnt/mcom/mgms/mgms-agent/bam/snt
+#          permissions: '0777'
+        - path: /tmp/configuration-data.sh
+          content:
+            str_replace:
+              template: |
+                export VNF='TSLEE'
+                export VNFI='$VNFI'
+                export VNFC='TSLEE-FE'
+                export VNFC_GROUP='$VNFC_GROUP'
+                export POP='$POP'
+                export INSTANCE_NUMBER='$INSTANCE_NUMBER'
+                export DEVELOP='$DEVELOP'
+                export HOST_NAME='$HOST_NAME'
+                export DOMAIN_NAME='$DOMAIN_NAME'
+                export TIME_ZONE='$TIME_ZONE'
+                export OMMODE='$OMMODE'
+                export OMDEV='eth1'
+                export OMADDR='$OMADDR'
+                export OMNETADDR='$OMNETADDR'
+                export OMPREFIX='$OMPREFIX'
+                export OMGATEWAY='$OMGATEWAY'
+                export SIGMODE='$SIGMODE'
+                export SIGDEV='eth2'
+                export SIGADDR='$SIGADDR'
+                export SIGNETADDR='$SIGNETADDR'
+                export SIGPREFIX='$SIG2PREFIX'
+                export SIGGATEWAY='$SIGGATEWAY'
+                export SIG2MODE='$SIG2MODE'
+                export SIG2DEV='eth3'
+                export SIG2ADDR='$SIG2ADDR'
+                export SIG2NETADDR='$SIG2NETADDR'
+                export SIG2PREFIX='$SIG2PREFIX'
+                export SIG2GATEWAY='$SIG2GATEWAY'
+                export CDRDEV='eth4'
+                export CDRNETADDR='$CDRNETADDR'
+                export CDRPREFIX='$CDRPREFIX'
+                export BILLDEV=none
+                export DBREPDEV=none
+                export SSHMODE='$SSHMODE'
+                export SSHDEV='eth0'
+                export SSHADDR='$SSHADDR'
+                export SSHNETADDR='$SSHNETADDR'
+                export SSHPREFIX='$SSHPREFIX'
+                export SSHGATEWAY='$SSHGATEWAY'
+                export CCA_BOOTSTRAP='False'
+                export DO_SIGNALING_ROUTES='$DO_SIGNALING_ROUTES'
+                export LOCAL_QUORUM='$LOCAL_QUORUM'
+                export CCA_CLIENT='true'
+                export CCA_THIN_CLIENT='true'
+                export CCA_IGNITE_MULTICAST_GROUP='$CCA_IGNITE_MULTICAST_GROUP'
+                export MGMS_IGNITE_MULTICAST_GROUP='$MGMS_IGNITE_MULTICAST_GROUP'
+                export CDR_IGNITE_MULTICAST_GROUP='$CDR_IGNITE_MULTICAST_GROUP'
+                export UNICA='$UNICA'
+                export CUSTOMDYNCONF='$DYNCONF_CMD'
+                export VNFC_RDBMS='$VNFC_RDBMS'
+                export VNFC_TSLEE='$VNFC_TSLEE'
+                export VNFC_MGMS='$VNFC_MGMS'
+                export VNFC_CDR='$VNFC_CDR'
+                export VNFC_GTW='$VNFC_GTW'
+                export VNFC_DRA='$VNFC_DRA'
+                export VNFC_SIPP='$VNFC_SIPP'
+                export VNFC_IMDB='$VNFC_IMDB'
+              params:
+                $VNFI: { get_param: vnfi_id }
+                $VNFC_GROUP: { get_param: vnfc_group }
+                $POP: { get_param: site_code }
+                $INSTANCE_NUMBER: { get_attr: [ padded_instance_number, value ] }
+                $DEVELOP: { get_param: develop }
+                $HOST_NAME: { get_param: [ nodes, get_param: index, hostname ] }
+                $DOMAIN_NAME: { get_param: [ nodes, get_param: index, domain_name ] }
+                $TIME_ZONE: { get_param: time_zone_code }
+                $OMMODE: { get_param: om_mode }
+                $OMADDR: { get_param: [ nodes, get_param: index, om ] }
+                $OMNETADDR: { get_param: om_netaddr }
+                $OMPREFIX: { get_param: om_prefix }
+                $OMGATEWAY: { get_param: om_gateway }
+                $SIGMODE: { get_param: sig_mode }
+                $SIG2MODE: { get_param: sig2_mode }                
+                $SIGADDR: { get_param: [ nodes, get_param: index, signaling0 ] }
+                $SIG2ADDR: { get_param: [ nodes, get_param: index, signaling1 ] }
+                $SIGNETADDR: { get_param: sig_netaddr }
+                $SIG2NETADDR: { get_param: sig2_netaddr }
+                $SIGPREFIX: { get_param: sig_prefix }
+                $SIG2PREFIX: { get_param: sig2_prefix }
+                $SIGGATEWAY: { get_param: sig_gateway }
+                $SIG2GATEWAY: { get_param: sig2_gateway }
+                $CDRNETADDR: { get_param: cdr_netaddr }
+                $CDRPREFIX: { get_param: cdr_prefix }
+                $SSHMODE: { get_param: ssh_mode }
+                $SSHADDR: { get_param: [ nodes, { get_param: index }, ssh ] }
+                $SSHNETADDR: { get_param: ssh_netaddr }
+                $SSHPREFIX: { get_param: ssh_prefix }
+                $SSHGATEWAY: { get_param: ssh_gateway }
+                $DO_SIGNALING_ROUTES: { get_param: do_signaling_routes }
+                $LOCAL_QUORUM: { get_param: local_quorum }
+                $CCA_IGNITE_MULTICAST_GROUP: { get_param: cca_ignite_multicast_group }
+                $MGMS_IGNITE_MULTICAST_GROUP: { get_param: mgms_ignite_multicast_group }
+                $CDR_IGNITE_MULTICAST_GROUP: { get_param: cdr_ignite_multicast_group }
+                $UNICA: { get_param: unica }
+                $DYNCONF_CMD: { get_param: tslee_dynconf_cmd }
+                $VNFC_RDBMS: { get_param: [ vnfcnames, RDBMS, name ] }
+                $VNFC_TSLEE: { get_param: [ vnfcnames, TSLEE, name ] }
+                $VNFC_MGMS: { get_param: [ vnfcnames, MGMS, name ] }
+                $VNFC_CDR: { get_param: [ vnfcnames, CDR, name ] }
+                $VNFC_GTW: { get_param: [ vnfcnames, GTW, name ] }
+                $VNFC_DRA: { get_param: [ vnfcnames, DRA, name ] }
+                $VNFC_SIPP: { get_param: [ vnfcnames, SIPP, name ] }
+                $VNFC_IMDB: { get_param: [ vnfcnames, IMDB, name ] }
+        - path: /tmp/timesync.json
+          content: { get_param: timesync }
+        - path: /tmp/cca-config.json
+          content: { get_param: cca_config }
+        - path: /mcom/.initialize/initialize-pre.sh
+          permissions: '0755'
+          content: |
+            #!/bin/bash
+            exit 0
+        - path: /mcom/.initialize/initialize-post.sh
+          permissions: '0755'
+          content: |
+            #!/bin/bash
+            HOSTNAME=$(hostname)
+            sed -i -e "/^127.0.0.1/s/$/ $HOSTNAME/" -e "/^::1[ 	]/s/$/ $HOSTNAME/" /etc/hosts
+            exit 0
+        - path: /tmp/inter-site-routes.json
+          content: { get_param: inter_site_nets }
+
+  init:
+    type: OS::Heat::MultipartMime
+    properties:
+      parts:
+      - config: {get_resource: files}
+      - config: {get_resource: launch_script}
+
+  server:
+    type: OS::Nova::Server
+    depends_on:
+      - ssh_port_static_unica
+      - ssh_port_static_not_unica
+      - ssh_port_dhcp_unica
+      - ssh_port_dhcp_not_unica
+      - om_port_static_not_unica
+      - om_port_dhcp_unica
+      - om_port_dhcp_not_unica
+      - sig_port_static_unica
+      - sig_port_static_not_unica
+      - sig_port_dhcp_unica
+      - sig_port_dhcp_not_unica
+      - sig2_port_static_unica
+      - sig2_port_static_not_unica
+      - sig2_port_dhcp_unica
+      - sig2_port_dhcp_not_unica
+      - cdr_port_unica
+      - cdr_port_not_unica
+    properties:
+      name:
+        str_replace:
+          template: $VNFI-TSLEE-FE-$INSTANCE_NUMBER
+          params:
+            $VNFI: { get_param: vnfi_id }
+            $INSTANCE_NUMBER: { get_attr: [ padded_instance_number, value ] }
+      key_name: { get_param: keypair }
+      availability_zone: { get_param: [ nodes, get_param: index, availability_zone ] }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      scheduler_hints:
+        #group: { get_param: server_group }
+      networks:
+        - port: { get_attr: [ ssh_port_name, value ] }
+        - port: { get_attr: [ om_port_name, value ] }
+        - port: { get_attr: [ sig_port_name, value ] }
+        - port: { get_attr: [ sig2_port_name, value ] }
+        - port: { get_attr: [ cdr_port_name, value ] }
+      user_data_format: SOFTWARE_CONFIG
+      user_data: { get_resource: init }
+
+  ssh_port_name:
+    type: OS::Heat::Value
+    properties:
+      type: string
+      value:
+        str_replace:
+          template: $VNFI-TSLEE-FE-$INSTANCE_NUMBER-ssh_port
+          params:
+            $VNFI: { get_param: vnfi_id }
+            $INSTANCE_NUMBER: { get_attr: [ padded_instance_number, value ] }
+
+  ssh_port_static_unica:
+    type: OS::Neutron::Port
+    condition: ssh_is_static_unica
+    properties:
+      name: { get_attr: [ ssh_port_name, value ] }
+      network_id: { get_param: ssh_net }
+      fixed_ips:
+        - ip_address: { get_param: [ nodes, index, ssh ] }
+      port_security_enabled: false
+
+  ssh_port_static_not_unica:
+    type: OS::Neutron::Port
+    condition: ssh_is_static_not_unica
+    properties:
+      name: { get_attr: [ ssh_port_name, value ] }
+      network_id: { get_param: ssh_net }
+      fixed_ips:
+        - ip_address: { get_param: [ nodes, { get_param: index }, ssh ] }
+      security_groups: [ { get_param: security_group } ]
+
+  floating_ip_static_unica:
+    type: OS::Neutron::FloatingIP
+    condition: with_floating_static_unica
+    properties:
+      floating_network: { get_param: [ networks, PUBLIC, netname ] }
+      port_id: { get_resource: ssh_port_static_unica }
+
+  floating_ip_static_not_unica:
+    type: OS::Neutron::FloatingIP
+    condition: with_floating_static_not_unica
+    properties:
+      floating_network: { get_param: [ networks, PUBLIC, netname ] }
+      port_id: { get_resource: ssh_port_static_not_unica }
+
+  ssh_port_dhcp_unica:
+    type: OS::Neutron::Port
+    condition: ssh_is_dhcp_unica
+    properties:
+      name: { get_attr: [ ssh_port_name, value ] }
+      network_id: { get_param: ssh_net }
+      fixed_ips:
+        - subnet_id: { get_param: ssh_subnet }
+      port_security_enabled: false
+
+  ssh_port_dhcp_not_unica:
+    type: OS::Neutron::Port
+    condition: ssh_is_dhcp_not_unica
+    properties:
+      name: { get_attr: [ ssh_port_name, value ] }
+      network_id: { get_param: ssh_net }
+      fixed_ips:
+        - subnet_id: { get_param: ssh_subnet }
+      security_groups: [ { get_param: security_group } ]
+
+  floating_ip_dchp_unica:
+    type: OS::Neutron::FloatingIP
+    condition: with_floating_dhcp_unica
+    properties:
+      floating_network: { get_param: [ networks, PUBLIC, netname ] }
+      port_id: { get_resource: ssh_port_dhcp_unica }
+
+  floating_ip_dchp_not_unica:
+    type: OS::Neutron::FloatingIP
+    condition: with_floating_dhcp_not_unica
+    properties:
+      floating_network: { get_param: [ networks, PUBLIC, netname ] }
+      port_id: { get_resource: ssh_port_dhcp_not_unica }
+
+  om_port_name:
+    type: OS::Heat::Value
+    properties:
+      type: string
+      value:
+        str_replace:
+          template: $VNFI-TSLEE-FE-$INSTANCE_NUMBER-om_port
+          params:
+            $VNFI: { get_param: vnfi_id }
+            $INSTANCE_NUMBER: { get_attr: [ padded_instance_number, value ] }
+
+  om_port_static_unica:
+    type: OS::Neutron::Port
+    condition: om_is_static_unica
+    properties:
+      name: { get_attr: [ om_port_name, value ] }
+      network_id: { get_param: om_net }
+      fixed_ips:
+        - ip_address: { get_param: [ nodes, get_param: index, om ] }
+      port_security_enabled: false
+
+  om_port_static_not_unica:
+    type: OS::Neutron::Port
+    condition: om_is_static_not_unica
+    properties:
+      name: { get_attr: [ om_port_name, value ] }
+      network_id: { get_param: om_net }
+      fixed_ips:
+        - ip_address: { get_param: [ nodes, get_param: index, om ] }
+      security_groups: [ { get_param: security_group } ]
+
+  om_port_dhcp_unica:
+    type: OS::Neutron::Port
+    condition: om_is_dhcp_unica
+    properties:
+      name: { get_attr: [ om_port_name, value ] }
+      network_id: { get_param: om_net }
+      fixed_ips:
+        - subnet_id: { get_param: om_subnet }
+      port_security_enabled: false
+
+  om_port_dhcp_not_unica:
+    type: OS::Neutron::Port
+    condition: om_is_dhcp_not_unica
+    properties:
+      name: { get_attr: [ om_port_name, value ] }
+      network_id: { get_param: om_net }
+      fixed_ips:
+        - subnet_id: { get_param: om_subnet }
+      security_groups: [ { get_param: security_group } ]
+
+
+  sig_port_name:
+    type: OS::Heat::Value
+    properties:
+      type: string
+      value:
+        str_replace:
+          template: $VNFI-TSLEE-FE-$INSTANCE_NUMBER-sig_port
+          params:
+            $VNFI: { get_param: vnfi_id }
+            $INSTANCE_NUMBER: { get_attr: [ padded_instance_number, value ] }
+
+  sig_port_static_unica:
+    type: OS::Neutron::Port
+    condition: sig_is_static_unica
+    properties:
+      name: { get_attr: [ sig_port_name, value ] }
+      network_id: { get_param: sig_net }
+      fixed_ips:
+        - ip_address: { get_param: [ nodes, get_param: index, signaling0 ] }
+      port_security_enabled: false
+
+  sig_port_static_not_unica:
+    type: OS::Neutron::Port
+    condition: sig_is_static_not_unica
+    properties:
+      name: { get_attr: [ sig_port_name, value ] }
+      network_id: { get_param: sig_net }
+      fixed_ips:
+        - ip_address: { get_param: [ nodes, get_param: index, signaling0 ] }
+      security_groups: [ { get_param: security_group } ]
+
+  sig_port_dhcp_unica:
+    type: OS::Neutron::Port
+    condition: sig_is_dhcp_unica
+    properties:
+      name: { get_attr: [ sig_port_name, value ] }
+      network_id: { get_param: sig_net }
+      fixed_ips:
+        - subnet_id: { get_param: sig_subnet }
+      port_security_enabled: false
+
+  sig_port_dhcp_not_unica:
+    type: OS::Neutron::Port
+    condition: sig_is_dhcp_not_unica
+    properties:
+      name: { get_attr: [ sig_port_name, value ] }
+      network_id: { get_param: sig_net }
+      fixed_ips:
+        - subnet_id: { get_param: sig_subnet }
+      security_groups: [ { get_param: security_group } ]
+
+  sig2_port_name:
+    type: OS::Heat::Value
+    properties:
+      type: string
+      value:
+        str_replace:
+          template: $VNFI-TSLEE-FE-$INSTANCE_NUMBER-sig2_port
+          params:
+            $VNFI: { get_param: vnfi_id }
+            $INSTANCE_NUMBER: { get_attr: [ padded_instance_number, value ] }
+
+  sig2_port_static_unica:
+    type: OS::Neutron::Port
+    condition: sig2_is_static_unica
+    properties:
+      name: { get_attr: [ sig2_port_name, value ] }
+      network_id: { get_param: sig2_net }
+      fixed_ips:
+        - ip_address: { get_param: [ nodes, get_param: index, signaling1 ] }
+      port_security_enabled: false
+
+  sig2_port_static_not_unica:
+    type: OS::Neutron::Port
+    condition: sig2_is_static_not_unica
+    properties:
+      name: { get_attr: [ sig2_port_name, value ] }
+      network_id: { get_param: sig2_net }
+      fixed_ips:
+        - ip_address: { get_param: [ nodes, get_param: index, signaling1 ] }
+      security_groups: [ { get_param: security_group } ]
+
+  sig2_port_dhcp_unica:
+    type: OS::Neutron::Port
+    condition: sig2_is_dhcp_unica
+    properties:
+      name: { get_attr: [ sig2_port_name, value ] }
+      network_id: { get_param: sig2_net }
+      fixed_ips:
+        - subnet_id: { get_param: sig2_subnet }
+      port_security_enabled: false
+
+  sig2_port_dhcp_not_unica:
+    type: OS::Neutron::Port
+    condition: sig2_is_dhcp_not_unica
+    properties:
+      name: { get_attr: [ sig2_port_name, value ] }
+      network_id: { get_param: sig2_net }
+      fixed_ips:
+        - subnet_id: { get_param: sig2_subnet }
+      security_groups: [ { get_param: security_group } ]
+
+  cdr_port_name:
+    type: OS::Heat::Value
+    properties:
+      type: string
+      value:
+        str_replace:
+          template: $VNFI-TSLEE-FE-$INSTANCE_NUMBER-cdr_port
+          params:
+            $VNFI: { get_param: vnfi_id }
+            $INSTANCE_NUMBER: { get_attr: [ padded_instance_number, value ] }
+
+  cdr_port_unica:
+    type: OS::Neutron::Port
+    condition: is_unica
+    properties:
+      name: { get_attr: [ cdr_port_name, value ] }
+      network_id: { get_param: cdr_net }
+      fixed_ips:
+        - subnet_id: { get_param: cdr_subnet }
+      port_security_enabled: false
+
+  cdr_port_not_unica:
+    type: OS::Neutron::Port
+    condition: is_not_unica
+    properties:
+      name: { get_attr: [ cdr_port_name, value ] }
+      network_id: { get_param: cdr_net }
+      fixed_ips:
+        - subnet_id: { get_param: cdr_subnet }
+      security_groups: [ { get_param: security_group } ]
+

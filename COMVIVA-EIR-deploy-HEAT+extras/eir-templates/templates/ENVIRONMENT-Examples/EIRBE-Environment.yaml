@@ -1,0 +1,432 @@
+parameters:
+
+  ########################################
+  ## General parameters
+  ########################################
+
+  flavors:
+    EIR-BE:
+      name: eirbe_flavor
+
+  security_group_id: 757efb78-9b8c-4ad5-b5b2-38198d3421fa
+
+  # Platform instance name
+  #
+  vnfi_id: eir-lab
+
+  # SSH keypair to install in all instances
+  #
+  keypair: eir-lab-key
+
+  # List of ntp sources
+  #
+  timesync:
+    - 10.232.15.17
+  
+  # CCA (Component Config Agent) configuration for intersite communicaction
+  # Fixed addresses of RDBMS and MGMS VMs in OM network should be provided
+  #
+  cca_config:
+    sites:
+    - site_code: AR
+      fixed_ip_addresses:
+      - 192.168.2.100
+      - 192.168.2.101
+      - 192.168.2.102
+      - 192.168.2.103
+  # External endpoint definitions
+  #
+  external_endpoints:
+    - vnf: TSLEE
+      vnfi: any
+      vnfc: any
+      pop: any
+      avail_zone: any
+      vnfci: any
+      module: any
+      module_instance: any
+      endpoint: sippExternals
+      endpoint_type: SIP_TYPE
+      json:
+        external_sets:
+        - id: "1138"
+          description: SP
+          transports:
+          - name: MGIVVID
+            transport:
+            - ipAddress: 10.105.16.27
+              port: "5060"
+            - ipAddress: 10.105.16.28
+              port: "5060"
+          - name: MGIVIVC
+            transport:
+            - ipAddress: 10.105.32.23
+              port: "5060"
+            - ipAddress: 10.105.33.23
+              port: "5060"
+        - id: "2136"
+          description: RJ
+          transports:
+          - name: MGIBARA
+            transport:
+            - ipAddress: 10.173.65.30
+              port: "5060"
+            - ipAddress: 10.173.66.95
+              port: "5060"
+          - name: MGIMSJA
+            transport:
+            - ipAddress: 10.173.34.13
+              port: "5060"
+            - ipAddress: 10.173.35.42
+              port: "5060"
+        - id: "6134"
+          description: DF
+          transports:
+          - name: MGITCOA
+            transport:
+            - ipAddress: 10.62.80.20
+              port: "5060"
+            - ipAddress: 10.62.81.20
+              port: "5060"
+          - name: MGITCEA
+            transport:
+            - ipAddress: 10.62.64.20
+              port: "5060"
+            - ipAddress: 10.62.65.20
+              port: "5060"
+    - vnf: TSLEE
+      vnfi: any
+      vnfc: any
+      pop: any
+      avail_zone: any
+      vnfci: any
+      module: any
+      module_instance: any
+      endpoint: gtwExternals
+      endpoint_type: STP_TYPE
+      json:
+        local_point_code: "4211"
+        network_appearance: "0"
+        sap_id: "0"
+        network_indicator: "international"
+        sccp_route_by_spc: "1"
+        sccp_enable_pcap: "false"
+        remoteSpcs:
+        - spc: "2000"
+          ssns:
+            - "146"
+        - spc: "3000"
+          ssns:
+            - "146"
+            - "5"
+        msps:
+        - routing_context: "2"
+          send_routing_context: "false"
+          send_network_appearance: "false"
+          remote_spcs_priority:
+          - spc: "2000"
+            priority: "1"
+          - spc: "3000"
+            priority: "1"
+          local_port: "8022"
+          remote_port: "10329"
+          remote_addresses:
+          - addr: 10.232.9.12
+            netname: SIGNALING
+          - addr: 10.232.9.11
+            netname: SIGNALING
+        - routing_context: "2"
+          send_routing_context: "false"
+          send_network_appearance: "false"
+          remote_spcs_priority:
+          - spc: "2000"
+            priority: "1"
+          - spc: "3000"
+            priority: "1"
+          local_port: "8023"
+          remote_port: "10339"
+          remote_addresses:
+          - addr: 10.232.10.12
+            netname: SIGNALING
+          - addr: 10.232.10.11
+            netname: SIGNALING
+        dra_peers:
+        - name: JG_0_net0
+          host: [ 10.232.9.45, 10.232.9.46 ]
+          netname: SIGNALING
+          port: "4433"
+        - name: JG_0_net1
+          host: [ 10.232.10.45, 10.232.10.46 ]
+          netname: SIGNALING
+          port: "4433"
+        - name: JG_1_net0
+          host: [ 10.232.9.46, 10.232.9.47 ]
+          netname: SIGNALING
+          port: "3344"
+        - name: JG_1_net1
+          host: [ 10.232.10.46, 10.232.10.47 ]
+          netname: SIGNALING
+          port: "3344"
+        dra_realms:
+        - realm: realm@vivo.com
+          vendor_id: "10415"
+          auth_appl_id: "16777217"
+          acct_appl_id: "0"
+          peers:
+          - JG_0_net0
+          - JG_0_net1
+        - realm: realm@morto.com
+          vendor_id: "10415"
+          auth_appl_id: "16777217"
+          acct_appl_id: "0"
+          peers:
+          - JG_1_net0
+          - JG_1_net1
+    - vnf: TSLEE
+      vnfi: any
+      vnfc: TSLEE-BE
+      pop: any
+      avail_zone: any
+      vnfci: any
+      module: ares-service
+      module_instance: any
+      endpoint: email_server
+      endpoint_type: EMAIL_SERVER_TYPE
+      json:
+      - server_address: 172.16.88.30
+        server_port: 25
+        user: atsrt@localhost.localdomain
+        password: 4ce55db2bccd72fc4c28e633eba26f4a
+        use_tsl: 'false'
+        use_ssl: 'false'
+        timeout_ms: "35000"
+        target_email:
+        - tito@domain.com
+        - pepe@domain.com
+        filters:
+        - id_pattern: /+/+/+/+/+/+/+/+/Status
+          #row_pattern: *
+    - vnf: TSLEE
+      vnfi: any
+      vnfc: TSLEE-BE
+      pop: any
+      avail_zone: any
+      vnfci: any
+      module: mgms-notifier
+      module_instance: any
+      endpoint: email_server
+      endpoint_type: EMAIL_SERVER_TYPE
+      json:
+      - server_address: 172.16.97.227
+        server_port: 25
+        user: yo@domain.com
+        password: 4ce55db2bccd72fc4c28e633eba26f4a
+        use_tsl: 'false'
+        use_ssl: 'false'
+        timeout_ms: "5000"
+        target_email:
+        - tito@domain.com
+        - pepe@domain.com
+        filters:
+        - id_pattern: /+/+/+/+/+/+/+/+/Status
+          #row_pattern: *
+    - vnf: TSLEE
+      vnfi: any
+      vnfc: TSLEE-BE
+      pop: any
+      avail_zone: any
+      vnfci: any
+      module: mgms-notifier
+      module_instance: any
+      endpoint: sms_server
+      endpoint_type: SMS_SERVER_TYPE
+      json:
+      - smsc_address: 172.16.97.227
+        smsc_port: 25
+        smsc_user: yo@domain.com
+        smsc_password: "4ce55db2bccd72fc4c28e633eba26f4a"
+        smsc_timeout_ms: "5000"
+        smsc_source_address: 172.16.97.227
+        smsc_source_type_of_number: NATIONAL
+        smsc_source_numbering_plan_indicator: ISDN
+        target_addresses:
+        - address: "628176504657"
+          type_of_number: NETWORK_SPECIFIC
+          numbering_plan_indicator: LAND_MOBILE
+        - address: "2020"
+          type_of_number: NATIONAL
+          numbering_plan_indicator: PRIVATE
+    - vnf: TSLEE
+      vnfi: any
+      vnfc: TSLEE-BE
+      pop: SP
+      avail_zone: any
+      vnfci: any
+      module: blec-ftpsender
+      module_instance: any
+      endpoint: blec_ftp_server
+      endpoint_type: FTP_SERVER_TYPE
+      json:
+      - server_address: 10.232.5.127
+        server_port: 21
+        user: bcpp
+        password: 80026a6b7c0d6dbc
+        timeout_ms: "10000"
+        remote_dir: "/tmp"
+    - vnf: TSLEE
+      vnfi: any
+      vnfc: TSLEE-BE
+      pop: RJ
+      avail_zone: any
+      vnfci: any
+      module: blec-ftpsender
+      module_instance: any
+      endpoint: blec_ftp_server
+      endpoint_type: FTP_SERVER_TYPE
+      json:
+      - server_address: 10.232.5.128
+        server_port: 21
+        user: bcpp
+        password: 80026a6b7c0d6dbc
+        timeout_ms: "10000"
+        remote_dir: "/tmp"
+
+  # Trap destination addresses
+  #
+  trap_dest_addrs:
+    - 10.232.9.136
+    - 10.232.9.131
+  
+  vnfcnames:
+    RDBMS:
+      name: MySQL
+    TSLEE:
+      name: TSLEE-FE
+    MGMS:
+      name: TSLEE-BE
+    CDR:
+      name: CDR-BE
+    GTW:
+      name: GTW-FE
+    DRA:
+      name: DRA-FE
+    SIPP:
+      name: SIPP-FE
+    IMDB:
+      name: IMDB-FE
+
+  networks:
+    OM:
+      create: false
+      netaddr: 192.168.2.0
+      allocation_pools:
+      - start: 192.168.2.10
+        end: 192.168.2.199
+      prefix: 24
+      mode: static
+      netname: eir-lab-om-net
+      subnetname: eir-lab-om-subnet
+      cidr: 192.168.2.0/24
+      gateway: 192.168.2.1
+    BILL:
+      create: false
+      netaddr: 192.168.4.0
+      allocation_pools:
+      - start: 192.168.4.10
+        end: 192.168.4.199
+      prefix: 24
+      mode: static
+      netname: eir-lab-bill-net
+      subnetname: eir-lab-bill-subnet
+      cidr: 192.168.4.0/24
+      gateway: 192.168.4.1
+    DBREP:
+      create: false
+      netaddr: 192.168.6.0
+      allocation_pools:
+      - start: 192.168.6.2
+        end: 192.168.6.254
+      prefix: 24
+      mode: static
+      netname: eir-lab-dbrep-net
+      subnetname: eir-lab-dbrep-subnet
+      cidr: 192.168.6.0/24
+      gateway: 192.168.6.1
+    SIG:
+      create: false
+      netaddr: 192.168.3.0
+      allocation_pools:
+      - start: 192.168.3.2
+        end: 192.168.3.254
+      prefix: 24
+      mode: static
+      netname: eir-lab-sig-net
+      subnetname: eir-lab-sig-subnet
+      cidr: 192.168.3.0/24
+      gateway: 192.168.3.1
+    SSH:
+      create: false
+      netaddr: 192.168.1.0
+      allocation_pools:
+      - start: 192.168.1.10
+        end: 192.168.1.199
+      prefix: 24
+      mode: dhcp
+      netname: eir-lab-ssh-net
+      subnetname: eir-lab-ssh-subnet
+      cidr: 192.168.1.0/24
+      gateway: 192.168.1.1
+    CDR:
+      create: false
+      netaddr: 192.168.5.0
+      allocation_pools:
+      - start: 192.168.5.10
+        end: 192.168.5.199
+      prefix: 24
+      mode: dhcp
+      netname: eir-lab-cdr-net
+      subnetname: eir-lab-cdr-subnet
+      cidr: 192.168.5.0/24
+      gateway: 192.168.5.1
+    PUBLIC:
+      create: false
+      netaddr: 10.232.0.0
+      create_ext_router: false
+      gateway: 10.232.0.1
+      prefix: 20
+      mode: dhcp
+      netname: public
+      subnetname: public
+      cidr: 10.232.0.0/20
+      floating: true
+
+  # OM, BILL and DBREP network are comunicated between sites
+  # IP routes are derived from this parameters.
+  #
+  inter_site_nets:
+    - netcidr: 192.168.2.0/24
+      site_code: AR
+      gateway: 192.168.2.1
+      netname: OM
+    - netcidr: 192.168.6.0/24
+      site_code: AR
+      gateway: 192.168.6.1
+      netname: DBREP
+    - netcidr: 192.168.4.0/24
+      site_code: AR
+      gateway: 192.168.4.1
+      netname: BILL
+
+  ########################################
+  ##EIR-BE Parameters
+  ########################################
+  eirbe_image: EIR-BE_L2_CentOS_7.9_09022023
+  #eirbe_server_group_id: 878cfd8e-38b9-4688-ad4f-ecbaa87c3203
+  eirbe_count: 1
+  eirbe_nodes:
+    - instance: 0
+      availability_zone: nova
+      om: 192.168.2.115
+      hostname: eirbe-000
+      domain_name: eir-lab
+

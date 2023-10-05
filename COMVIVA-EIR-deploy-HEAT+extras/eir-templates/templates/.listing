@@ -1,0 +1,8 @@
+drwxr-xr-x    6 0        0            4096 Feb 08 23:28 .
+drwxrwxr-x    4 1000     1000         4096 Feb 09 15:08 ..
+drwxr-xr-x    8 0        0            4096 Mar 28 14:48 .git
+-rw-r--r--    1 0        0             623 Feb 08 20:28 .gitignore
+drwxr-xr-x    2 0        0            4096 Mar 28 14:48 ENVIRONMENT-Examples
+drwxr-xr-x    2 0        0            4096 Mar 21 18:03 HEAT-Examples
+drwxr-xr-x    2 0        0            4096 Mar 28 14:48 VNFC-Files
+-rw-r--r--    1 0        0            2289 Feb 08 23:28 create-script.sh

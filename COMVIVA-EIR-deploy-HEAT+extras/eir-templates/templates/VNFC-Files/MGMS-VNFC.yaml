@@ -1,0 +1,871 @@
+heat_template_version: 2016-10-14
+
+description: MGMS VNF deployment template
+
+parameter_groups:
+
+parameters:
+  vnfc_group:
+    type: string
+    default: Backends
+  vnfi_id:
+    type: string
+    description: VNFI name
+  index:
+    type: number
+    description: Heat ResourceGroup index.
+  security_group:
+    type: string
+    description: Security Group (firewall rules) for all servers
+  keypair:
+    type: string
+    description: SSH keypayr to inject in all servers
+  site_code:
+    type: string
+    description: Short site name. For example SP
+    default: AR
+  time_zone_code:
+    type: string
+    default: none
+  timesync:
+    type: string
+    description: NTP server list.
+  cca_config:
+    type: string
+    description: JSON of the form {"sites":[{"name":"siteName","cidr":"192.168.3.0/24","virtualIp":"192.168.3.50"},...]}
+  mgms_all_nodes:
+    type: string
+    description: Array of MGMS addresses as JSON of the form [{"ip":"192.168.3.50"},...]
+  image:
+    type: string
+    description: Image name or UUID.
+  flavor:
+    type: string
+    description: Flavor name or UUID.
+  om_net:
+    type: string
+    description: OM network
+  om_subnet:
+    type: string
+    description: OM network
+  om_mode:
+    type: string
+    description: static or dhcp
+    constraints:
+    - allowed_values:
+      - static
+      - dhcp
+  om_netaddr:
+    type: string
+    description: OM network address.
+  om_prefix:
+    type: number
+    description: OM network netmask prefix.
+  om_gateway:
+    type: string
+    description: 
+  cdr_net:
+    type: string
+    description: Internal tenant CDR network
+  cdr_subnet:
+    type: string
+    description: Internal tenant CDR subnet
+  cdr_netaddr:
+    type: string
+    description: Internal CDR network address.
+  cdr_prefix:
+    type: number
+    description: Internal CDR network netmask prefix.
+  bill_net:
+    type: string
+    description: Billing network
+  bill_subnet:
+    type: string
+    description: Billing network
+  bill_mode:
+    type: string
+    description: static or dhcp
+    constraints:
+    - allowed_values:
+      - static
+      - dhcp
+  bill_netaddr:
+    type: string
+    description: Billing network address.
+  bill_prefix:
+    type: number
+    description: Billing network netmask prefix.
+  bill_gateway:
+    type: string
+    description: Billing network default gateway.
+  ssh_net:
+    type: string
+    description: OM ssh network
+  ssh_subnet:
+    type: string
+    description: OM ssh network
+  ssh_mode:
+    type: string
+    description: static or dhcp
+    constraints:
+    - allowed_values:
+      - static
+      - dhcp
+  ssh_netaddr:
+    type: string
+    description: OM ssh network address.
+  ssh_prefix:
+    type: number
+    description: OM ssh network netmask prefix.
+  ssh_gateway:
+    type: string
+    description: OM ssh network gateway.
+  external_endpoints:
+    type: string
+    description: String con el contenido JSON de extenal endpoints
+  db_postfix:
+    type: string
+    description: prefix to identify database.
+    default: none
+  db_password:
+    type: string
+    description: MySQL non root users password.
+    default: Mcom@201811
+  volume_size:
+    type: number
+    description: volume size
+  #server_group:
+  #  type: string
+  #  description: server group
+  develop:
+    type: boolean
+    default: false
+    description: Only for testing purpose.
+  trap_dest_addrs:
+    type: string
+    description: IP where the management system should send traps.
+  inter_site_nets:
+    type: string
+    description: name, site, cidr and gateway of every inter-site network
+  local_quorum:
+    type: number
+    default: 2
+  virtual_ip:
+    type: string
+    description: Virtual IP on OM network to expose CDR and KPI files via SFTP
+    default: 192.168.1.100
+  virtual_ip_netmask:
+    type: string
+    description: Virtual IP on OM network to expose CDR and KPI files via SFTP
+    default: 255.255.255.0
+  sftp_cdr_password:
+    type: string
+    description: Password for the user sftp_cdr used to get CDRs from VM
+    default: sftp_cdr
+  sftp_kpi_password:
+    type: string
+    description: Password for the user sftp_cdr used to get KPIs from VM
+    default: sftp_kpi
+  cca_ignite_multicast_group:
+    type: string
+    description: UDP multicast address to be used by CCA ignite cluster
+  mgms_ignite_multicast_group:
+    type: string
+    description: UDP multicast address to be used by MGMS ignite cluster
+  cdr_ignite_multicast_group:
+    type: string
+    description: UDP multicast address to be used by CDR ignite cluster
+  cdr_lbport:
+    type: number
+    description: Load Balancer port for this site CDR cluster. It must be unique across all sites.
+    default: 6050
+  nodes:
+    type: json
+    description: Array of nodes parameters, one for each index in HEAT ResourceGroup.
+  tslee_nodes:
+    type: string
+    description: Array of nodes parameters, one for each index in HEAT ResourceGroup.
+  networks:
+    type: json
+    label: Local Networks
+    description: This POP networks information
+  unica:
+    type: boolean
+    description: Set to True if deploying in UNICA environment
+    default: false
+  hsqldb_max_memory_mb:
+    type: number
+    label: Max Memory HSQLDB
+    description: Max Memory HSQLDB
+    default: 8000
+  mgms_kpi_tz_offset:
+    type: string
+    description: KPI TimeZone OFFSET
+    default: +01:00
+  mgms_cdr_retention_days:
+    type: number
+    label: CDR RETENTION
+    description: CDR RETENTION DAYS
+    default: 30
+  mgms_kpi_retention_days:
+    type: number
+    label: KPI RETENTION
+    description: KPI RETENTION DAYS
+    default: 7
+  mgms_audit_logs_retention_days:
+    type: number
+    label: AUDIT LOGS RETENTION DAYS
+    description: AUDIT LOGS RETENTION DAYS
+    default: 7
+  mgms_sftp_audit_logs_password:
+    type: string
+    description: audit logs password
+    default: tslee@LOGS7854
+  mgms_sub_info_retention_days:
+    type: number
+    description: sub info retention days
+    default: 7
+  mgms_tables_dump_retention_days:
+    type: number
+    label: DUMP RETENTION DAYS
+    description: AUDIT RETENTION DAYS
+    default: 7
+  mgms_sftp_sub_info_password:
+    type: string
+    description: sftp sub password
+    default: tslee@INFO8563
+  mgms_sftp_tables_dump_password:
+    type: string
+    description: tables dump password
+    default: tslee@DUMP1309
+  vnfcnames:
+    type: json
+    label: Vnfc Names
+    description: Vncf names renaming
+  mgms_so_virtual_ip:
+    type: string
+    description: Virtual IP on SO
+    default: 192.168.1.101
+  mgms_so_virtual_ip_netmask:
+    type: string
+    description: Virtual IP netmask on SO
+    default: 255.255.255.0
+  snmp_version:
+    type: string
+    label: Snmp version number
+    description: Snmp version number
+    default: 3
+  snmp_v3_user:
+    type: string
+    label: Snmp user
+    description: Snmp username
+    default: mcom
+  snmp_v3_pass:
+    type: string
+    label: Snmp password
+    description: Snmp password
+    default: MCom@2022
+    
+conditions:
+
+  is_unica:
+    equals:
+    - { get_param: unica }
+    - True
+
+  is_not_unica:
+    not:
+      equals:
+      - { get_param: unica }
+      - True
+
+  without_virtual:
+    equals:
+    - { get_param: virtual_ip }
+    - none
+
+  with_virtual:
+    not: without_virtual
+
+  without_virtual_ip_unica:
+    and:
+    - without_virtual
+    - is_unica
+
+  without_virtual_ip_not_unica:
+    and:
+    - without_virtual
+    - is_not_unica
+
+  with_virtual_ip_unica:
+    and:
+    - with_virtual
+    - is_unica
+
+  with_virtual_ip_not_unica:
+    and:
+    - with_virtual
+    - is_not_unica
+
+  ssh_is_static:
+    equals:
+    - { get_param: ssh_mode }
+    - static
+
+  ssh_is_dhcp:
+    equals:
+    - { get_param: ssh_mode }
+    - dhcp
+
+  ssh_is_static_unica:
+    and:
+    - ssh_is_static
+    - is_unica
+
+  ssh_is_static_not_unica:
+    and:
+    - ssh_is_static
+    - is_not_unica
+
+  ssh_is_dhcp_unica:
+    and:
+    - ssh_is_dhcp
+    - is_unica
+
+  ssh_is_dhcp_not_unica:
+    and:
+    - ssh_is_dhcp
+    - is_not_unica
+
+  bill_is_static_unica:
+   and:
+    - equals:
+      - { get_param: bill_mode }
+      - static
+    - is_unica
+
+  bill_is_static_not_unica:
+   and:
+    - equals:
+      - { get_param: bill_mode }
+      - static
+    - is_not_unica
+
+  bill_is_dhcp_unica:
+    and:
+    - equals:
+      - { get_param: bill_mode }
+      - dhcp
+    - is_unica
+
+  bill_is_dhcp_not_unica:
+    and:
+    - equals:
+      - { get_param: bill_mode }
+      - dhcp
+    - is_not_unica
+
+  floating:
+    equals:
+    - { get_param: [ networks, PUBLIC, floating ] }
+    - True
+
+  floating_static_unica:
+    and:
+    - floating
+    - ssh_is_static_unica
+
+  floating_static_not_unica:
+    and:
+    - floating
+    - ssh_is_static_not_unica
+
+  floating_dhcp_unica:
+    and:
+    - floating
+    - ssh_is_dhcp_unica
+
+  floating_dhcp_not_unica:
+    and:
+    - floating
+    - ssh_is_dhcp_not_unica
+  
+resources:
+
+  padded_instance_number:
+    type: OS::Heat::Value
+    properties:
+      type: string
+      value:
+        yaql:
+          expression: selectCase(str($.data).len() = 1, str($.data).len() = 2).switchCase(format("00{0}",$.data),format("0{0}",$.data),str($.data))
+          data: { get_param: [ nodes, get_param: index, instance ] }
+
+  launch_script:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config: |
+        #!/bin/bash
+        nohup bash /mcom/.initialize/initialize.sh &
+        exit 0
+
+  files:
+    type: OS::Heat::CloudConfig
+    properties:
+      cloud_config:
+        debug: True
+        ssh_pwauth: True
+        disable_root: false
+        chpasswd:
+          list: |
+            root:comviva01
+            centos:comviva01
+          expire: false
+        runcmd:
+        - sed -i'.orig' -e's/without-password/yes/' /etc/ssh/sshd_config
+        - systemctl restart sshd
+        write_files:
+        - path: /tmp/configuration-data.sh
+          content:
+            str_replace:
+              template: |
+                export VNF='TSLEE'
+                export VNFI='$VNFI'
+                export VNFC='TSLEE-BE'
+                export VNFC_GROUP=$VNFC_GROUP
+                export INSTANCE_NUMBER='$INSTANCE_NUMBER'
+                export POP='$POP'
+                export OMMODE='$OMMODE'
+                export OMDEV='eth1'
+                export OMADDR='$OMADDR'
+                export OMNETADDR='$OMNETADDR'
+                export OMPREFIX='$OMPREFIX'
+                export OMGATEWAY='$OMGATEWAY'
+                export BILLMODE='$BILLMODE'
+                export BILLDEV='eth2'
+                export BILLADDR='$BILLADDR'
+                export BILLNETADDR='$BILLNETADDR'
+                export BILLPREFIX='$BILLPREFIX'
+                export BILLGATEWAY='$BILLGATEWAY'
+                export CDRDEV='eth3'
+                export CDRNETADDR='$CDRNETADDR'
+                export CDRPREFIX='$CDRPREFIX'
+                export SIGDEV=none
+                export DBREPDEV=none
+                export SSHMODE='$SSHMODE'
+                export SSHDEV='eth0'
+                export SSHADDR='$SSHADDR'
+                export SSHNETADDR='$SSHNETADDR'
+                export SSHPREFIX='$SSHPREFIX'
+                export SSHGATEWAY='$SSHGATEWAY'
+                export CCA_BOOTSTRAP=$CCA_BOOTSTRAP
+                export DB_POSTFIX=$DB_POSTFIX
+                export DB_PASSWORD=$DB_PASSWORD
+                export DEVELOP='$DEVELOP'
+                export VOLUME_SIZE='$VOLUME_SIZE'
+                export HOST_NAME='$HOST_NAME'
+                export DOMAIN_NAME='$DOMAIN_NAME'
+                export TIME_ZONE='$TIME_ZONE'
+                export LOCAL_QUORUM='$LOCAL_QUORUM'
+                export VIRTUAL_IP='$VIRTUAL_IP'
+                export VIRTUAL_IP_NETMASK='$VIRTUAL_IP_NETMASK'
+                export SFTP_CDR_PASSWORD='$SFTP_CDR_PASSWORD'
+                export SFTP_KPI_PASSWORD='$SFTP_KPI_PASSWORD'
+                export CCA_IGNITE_MULTICAST_GROUP='$CCA_IGNITE_MULTICAST_GROUP'
+                export MGMS_IGNITE_MULTICAST_GROUP='$MGMS_IGNITE_MULTICAST_GROUP'
+                export CDR_IGNITE_MULTICAST_GROUP='$CDR_IGNITE_MULTICAST_GROUP'
+                export CDR_LBPORT='$CDR_LBPORT'
+                export UNICA='$UNICA'
+                export HSQLDB_MAX_MEMORY_MB='$HSQLDB_MAX_MEMORY_MB'
+                export KPI_TZ_OFFSET='$KPI_TZ_OFFSET'
+                export CDR_RETENTION_DAYS='$CDR_RETENTION_DAYS'
+                export KPI_RETENTION_DAYS='$KPI_RETENTION_DAYS'
+                export AUDIT_LOGS_RETENTION_DAYS='$AUDIT_LOGS_RETENTION_DAYS'
+                export SFTP_AUDIT_LOGS_PASSWORD='$SFTP_AUDIT_LOGS_PASSWORD'
+                export SUB_INFO_RETENTION_DAYS='$SUB_INFO_RETENTION_DAYS'
+                export TABLES_DUMP_RETENTION_DAYS='$TABLES_DUMP_RETENTION_DAYS'
+                export SFTP_SUB_INFO_PASSWORD='$SFTP_SUB_INFO_PASSWORD'
+                export SFTP_TABLES_DUMP_PASSWORD='$SFTP_TABLES_DUMP_PASSWORD'
+                export VNFC_RDBMS='$VNFC_RDBMS'
+                export VNFC_TSLEE='$VNFC_TSLEE'
+                export VNFC_MGMS='$VNFC_MGMS'
+                export VNFC_CDR='$VNFC_CDR'
+                export VNFC_GTW='$VNFC_GTW'
+                export VNFC_DRA='$VNFC_DRA'
+                export VNFC_SIPP='$VNFC_SIPP'
+                export VNFC_IMDB='$VNFC_IMDB'
+                export SO_VIRTUAL_IP='$SO_VIRTUAL_IP'
+                export SO_VIRTUAL_IP_NETMASK='$SO_VIRTUAL_IP_NETMASK'
+                export SNMP_VERSION='$SNMP_VERSION'
+                export SNMP_V3_USER='$SNMP_V3_USER'
+                export SNMP_V3_PASS='$SNMP_V3_PASS'
+              params:
+                $VNFI: { get_param: vnfi_id }
+                $POP: { get_param: site_code }
+                $OMMODE: { get_param: om_mode }
+                $OMADDR: { get_param: [ nodes, get_param: index, om ] }
+                $OMNETADDR: { get_param: om_netaddr }
+                $OMPREFIX: { get_param: om_prefix }
+                $OMGATEWAY: { get_param: om_gateway }
+                $BILLMODE: { get_param: bill_mode }
+                $BILLADDR: { get_param: [ nodes, get_param: index, billing ] }
+                $BILLNETADDR: { get_param: bill_netaddr }
+                $BILLPREFIX: { get_param: bill_prefix }
+                $BILLGATEWAY: { get_param: bill_gateway }
+                $CDRNETADDR: { get_param: cdr_netaddr }
+                $CDRPREFIX: { get_param: cdr_prefix }
+                $SSHMODE: { get_param: ssh_mode }
+                $SSHADDR: { get_param: [ nodes, get_param: index, ssh ] }
+                $SSHNETADDR: { get_param: ssh_netaddr }
+                $SSHPREFIX: { get_param: ssh_prefix }
+                $SSHGATEWAY: { get_param: ssh_gateway }
+                $INSTANCE_NUMBER: { get_attr: [ padded_instance_number, value ] }
+                $VNFC_GROUP: { get_param: vnfc_group }
+                $CCA_BOOTSTRAP: { get_param: [ nodes, get_param: index, cca_bootstrap ] }
+                $DB_POSTFIX: { get_param: db_postfix }    
+                $DB_PASSWORD: { get_param: db_password }                
+                $DEVELOP: { get_param: develop }
+                $VOLUME_SIZE:  { get_param: volume_size }
+                $HOST_NAME: { get_param: [ nodes, get_param: index, hostname ] }
+                $DOMAIN_NAME: { get_param: [ nodes, get_param: index, domain_name ] }
+                $TIME_ZONE: { get_param: time_zone_code }
+                $LOCAL_QUORUM: { get_param: local_quorum }
+                $VIRTUAL_IP: { get_param:  virtual_ip }
+                $VIRTUAL_IP_NETMASK: { get_param:  virtual_ip_netmask }
+                $SFTP_CDR_PASSWORD: { get_param: sftp_cdr_password }
+                $SFTP_KPI_PASSWORD: { get_param: sftp_kpi_password }
+                $CCA_IGNITE_MULTICAST_GROUP: { get_param: cca_ignite_multicast_group }
+                $MGMS_IGNITE_MULTICAST_GROUP: { get_param: mgms_ignite_multicast_group }
+                $CDR_IGNITE_MULTICAST_GROUP: { get_param: cdr_ignite_multicast_group }
+                $CDR_LBPORT: { get_param: cdr_lbport }
+                $UNICA: { get_param: unica }
+                $HSQLDB_MAX_MEMORY_MB: { get_param: hsqldb_max_memory_mb }
+                $KPI_TZ_OFFSET: { get_param: mgms_kpi_tz_offset }
+                $CDR_RETENTION_DAYS: { get_param: mgms_cdr_retention_days }
+                $KPI_RETENTION_DAYS: { get_param: mgms_kpi_retention_days }
+                $AUDIT_LOGS_RETENTION_DAYS: { get_param: mgms_audit_logs_retention_days }
+                $SFTP_AUDIT_LOGS_PASSWORD: { get_param: mgms_sftp_audit_logs_password }
+                $SUB_INFO_RETENTION_DAYS: { get_param: mgms_sub_info_retention_days }
+                $TABLES_DUMP_RETENTION_DAYS: { get_param: mgms_tables_dump_retention_days }
+                $SFTP_SUB_INFO_PASSWORD: { get_param: mgms_sftp_sub_info_password }
+                $SFTP_TABLES_DUMP_PASSWORD: { get_param: mgms_sftp_tables_dump_password }
+                $VNFC_RDBMS: { get_param: [ vnfcnames, RDBMS, name ] }
+                $VNFC_TSLEE: { get_param: [ vnfcnames, TSLEE, name ] }
+                $VNFC_MGMS: { get_param: [ vnfcnames, MGMS, name ] }
+                $VNFC_CDR: { get_param: [ vnfcnames, CDR, name ] }
+                $VNFC_GTW: { get_param: [ vnfcnames, GTW, name ] }
+                $VNFC_DRA: { get_param: [ vnfcnames, DRA, name ] }
+                $VNFC_SIPP: { get_param: [ vnfcnames, SIPP, name ] }
+                $VNFC_IMDB: { get_param: [ vnfcnames, IMDB, name ] }
+                $SO_VIRTUAL_IP: { get_param:  mgms_so_virtual_ip }
+                $SO_VIRTUAL_IP_NETMASK: { get_param:  mgms_so_virtual_ip_netmask }
+                $SNMP_VERSION: { get_param: snmp_version }
+                $SNMP_V3_USER: { get_param: snmp_v3_user }
+                $SNMP_V3_PASS: { get_param: snmp_v3_pass }
+        - path: /tmp/timesync.json
+          content: { get_param: timesync }
+        - path: /tmp/mgms-all-nodes.json
+          content: { get_param: mgms_all_nodes }
+        - path: /tmp/tslee-nodes.json
+          content: { get_param: tslee_nodes }
+        - path: /tmp/cca-config.json
+          content: { get_param: cca_config }
+        - path: /tmp/external-endpoints.json
+          content: { get_param: external_endpoints }
+        - path: /tmp/inter-site-routes.json
+          content: { get_param: inter_site_nets }
+        - path: /tmp/trap-dest-addrs.json
+          content: { get_param: trap_dest_addrs }
+        - path: /mcom/.initialize/initialize-pre.sh
+          permissions: '0755'
+          content: |
+            #!/bin/bash
+            exit 0
+        - path: /mcom/.initialize/initialize-post.sh
+          permissions: '0755'
+          content: |
+            #!/bin/bash
+            HOSTNAME=$(hostname)
+            sed -i -e "/^127.0.0.1/s/$/ $HOSTNAME/" -e "/^::1[      ]/s/$/ $HOSTNAME/" /etc/hosts
+            exit 0
+
+  init:
+    type: OS::Heat::MultipartMime
+    properties:
+      parts:
+      - config: {get_resource: files}
+      - config: {get_resource: launch_script}
+
+  server:
+    type: OS::Nova::Server
+    depends_on:
+    - ssh_port_static_unica
+    - ssh_port_static_not_unica
+    - ssh_port_dhcp_unica
+    - ssh_port_dhcp_not_unica
+    - om_port_static_novip_unica
+    - om_port_static_novip_not_unica
+    - om_port_static_vip_unica
+    - om_port_static_vip_not_unica
+    - bill_port_static_unica
+    - bill_port_static_not_unica
+    - bill_port_dhcp_unica
+    - bill_port_dhcp_not_unica
+    - cdr_port_unica
+    - cdr_port_not_unica
+    properties:
+      name:
+        str_replace:
+          template: $VNFI-TSLEE-BE-$INSTANCE_NUMBER
+          params:
+            $VNFI: { get_param: vnfi_id }
+            $INSTANCE_NUMBER: { get_attr: [ padded_instance_number, value ] }
+      key_name: { get_param: keypair }
+      availability_zone: { get_param: [ nodes, get_param: index, availability_zone ] }
+      scheduler_hints:
+#        group: { get_param: server_group }
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      networks:
+        - port: { get_attr: [ ssh_port_name, value ] }
+        - port: { get_attr: [ om_port_name, value ] }
+        - port: { get_attr: [ bill_port_name, value ] }
+        - port: { get_attr: [ cdr_port_name, value ] }
+      user_data_format: SOFTWARE_CONFIG
+      user_data: { get_resource: init }
+
+  ssh_port_name:
+    type: OS::Heat::Value
+    properties:
+      type: string
+      value:
+        str_replace:
+          template: $VNFI-TSLEE-BE-$INSTANCE_NUMBER-ssh_port
+          params:
+            $VNFI: { get_param: vnfi_id }
+            $INSTANCE_NUMBER: { get_attr: [ padded_instance_number, value ] }
+
+  ssh_port_static_unica:
+    type: OS::Neutron::Port
+    condition: ssh_is_static_unica
+    properties:
+      name: { get_attr: [ ssh_port_name, value ] }
+      network_id: { get_param: ssh_net }
+      fixed_ips:
+        - ip_address: { get_param: [ nodes, index, ssh ] }
+      port_security_enabled: false
+
+  floating_ip_static_unica:
+    type: OS::Neutron::FloatingIP
+    condition: floating_static_unica
+    properties:
+      floating_network: { get_param: [ networks, PUBLIC, netname ] }
+      port_id: { get_resource: ssh_port_static_unica }
+
+  ssh_port_static_not_unica:
+    type: OS::Neutron::Port
+    condition: ssh_is_static_not_unica
+    properties:
+      name: { get_attr: [ ssh_port_name, value ] }
+      network_id: { get_param: ssh_net }
+      fixed_ips:
+        - ip_address: { get_param: [ nodes, { get_param: index }, ssh ] }
+      security_groups: [ { get_param: security_group } ]
+
+  floating_ip_static_not_unica:
+    type: OS::Neutron::FloatingIP
+    condition: floating_static_not_unica
+    properties:
+      floating_network: { get_param: [ networks, PUBLIC, netname ] }
+      port_id: { get_resource: ssh_port_static_not_unica }
+
+  ssh_port_dhcp_unica:
+    type: OS::Neutron::Port
+    condition: ssh_is_dhcp_unica
+    properties:
+      name: { get_attr: [ ssh_port_name, value ] }
+      network_id: { get_param: ssh_net }
+      fixed_ips:
+        - subnet_id: { get_param: ssh_subnet }
+      port_security_enabled: false
+
+  floating_ip_dhcp_unica:
+    type: OS::Neutron::FloatingIP
+    condition: floating_dhcp_unica
+    properties:
+      floating_network: { get_param: [ networks, PUBLIC, netname ] }
+      port_id: { get_resource: ssh_port_dhcp_unica }
+
+  ssh_port_dhcp_not_unica:
+    type: OS::Neutron::Port
+    condition: ssh_is_dhcp_not_unica
+    properties:
+      name: { get_attr: [ ssh_port_name, value ] }
+      network_id: { get_param: ssh_net }
+      fixed_ips:
+        - subnet_id: { get_param: ssh_subnet }
+      security_groups: [ { get_param: security_group } ]
+
+  floating_ip_dhcp_not_unica:
+    type: OS::Neutron::FloatingIP
+    condition: floating_dhcp_not_unica
+    properties:
+      floating_network: { get_param: [ networks, PUBLIC, netname ] }
+      port_id: { get_resource: ssh_port_dhcp_not_unica }
+
+  om_port_name:
+    type: OS::Heat::Value
+    properties:
+      type: string
+      value:
+        str_replace:
+          template: $VNFI-TSLEE-BE-$INSTANCE_NUMBER-om_port
+          params:
+            $VNFI: { get_param: vnfi_id }
+            $INSTANCE_NUMBER: { get_attr: [ padded_instance_number, value ] }
+
+  om_port_static_novip_unica:
+    type: OS::Neutron::Port
+    condition: without_virtual_ip_unica
+    properties:
+      name: { get_attr: [ om_port_name, value ] }
+      network_id: { get_param: om_net }
+      fixed_ips:
+        - ip_address: { get_param: [ nodes, get_param: index, om ] }
+      port_security_enabled: false
+
+  om_port_static_novip_not_unica:
+    type: OS::Neutron::Port
+    condition: without_virtual_ip_not_unica
+    properties:
+      name: { get_attr: [ om_port_name, value ] }
+      network_id: { get_param: om_net }
+      fixed_ips:
+        - ip_address: { get_param: [ nodes, get_param: index, om ] }
+      security_groups: [ { get_param: security_group } ]
+
+  om_port_static_vip_unica:
+    type: OS::Neutron::Port
+    condition: with_virtual_ip_unica
+    properties:
+      name: { get_attr: [ om_port_name, value ] }
+      network_id: { get_param: om_net }
+      fixed_ips:
+        - ip_address: { get_param: [ nodes, get_param: index, om ] }
+      port_security_enabled: false
+      allowed_address_pairs:
+        - ip_address: { get_param: [ nodes, get_param: index, om ] }
+        - ip_address: { get_param: virtual_ip }
+
+  om_port_static_vip_not_unica:
+    type: OS::Neutron::Port
+    condition: with_virtual_ip_not_unica
+    properties:
+      name: { get_attr: [ om_port_name, value ] }
+      network_id: { get_param: om_net }
+      fixed_ips:
+        - ip_address: { get_param: [ nodes, get_param: index, om ] }
+      security_groups: [ { get_param: security_group } ]
+      allowed_address_pairs:
+        - ip_address: { get_param: [ nodes, get_param: index, om ] }
+        - ip_address: { get_param: virtual_ip }
+
+  bill_port_name:
+    type: OS::Heat::Value
+    properties:
+      type: string
+      value:
+        str_replace:
+          template: $VNFI-TSLEE-BE-$INSTANCE_NUMBER-bill_port
+          params:
+            $VNFI: { get_param: vnfi_id }
+            $INSTANCE_NUMBER: { get_attr: [ padded_instance_number, value ] }
+
+  bill_port_static_unica:
+    type: OS::Neutron::Port
+    condition: bill_is_static_unica
+    properties:
+      name: { get_attr: [ bill_port_name, value ] }
+      network_id: { get_param: bill_net }
+      fixed_ips:
+        - ip_address: { get_param: [ nodes, get_param: index, billing ] }
+      port_security_enabled: false
+
+  bill_port_static_not_unica:
+    type: OS::Neutron::Port
+    condition: bill_is_static_not_unica
+    properties:
+      name: { get_attr: [ bill_port_name, value ] }
+      network_id: { get_param: bill_net }
+      fixed_ips:
+        - ip_address: { get_param: [ nodes, get_param: index, billing ] }
+      security_groups: [ { get_param: security_group } ]
+
+  bill_port_dhcp_unica:
+    type: OS::Neutron::Port
+    condition: bill_is_dhcp_unica
+    properties:
+      name: { get_attr: [ bill_port_name, value ] }
+      network_id: { get_param: bill_net }
+      fixed_ips:
+        - subnet_id: { get_param: bill_subnet }
+      port_security_enabled: false
+
+  bill_port_dhcp_not_unica:
+    type: OS::Neutron::Port
+    condition: bill_is_dhcp_not_unica
+    properties:
+      name: { get_attr: [ bill_port_name, value ] }
+      network_id: { get_param: bill_net }
+      fixed_ips:
+        - subnet_id: { get_param: bill_subnet }
+      security_groups: [ { get_param: security_group } ]
+
+  cdr_port_name:
+    type: OS::Heat::Value
+    properties:
+      type: string
+      value:
+        str_replace:
+          template: $VNFI-TSLEE-BE-$INSTANCE_NUMBER-cdr_port
+          params:
+            $VNFI: { get_param: vnfi_id }
+            $INSTANCE_NUMBER: { get_attr: [ padded_instance_number, value ] }
+
+  cdr_port_unica:
+    type: OS::Neutron::Port
+    condition: is_unica
+    properties:
+      name: { get_attr: [ cdr_port_name, value ] }
+      network_id: { get_param: cdr_net }
+      fixed_ips:
+        - subnet_id: { get_param: cdr_subnet }
+      port_security_enabled: false
+
+  cdr_port_not_unica:
+    type: OS::Neutron::Port
+    condition: is_not_unica
+    properties:
+      name: { get_attr: [ cdr_port_name, value ] }
+      network_id: { get_param: cdr_net }
+      fixed_ips:
+        - subnet_id: { get_param: cdr_subnet }
+      security_groups: [ { get_param: security_group } ]
+
+  data_volume:
+    type: OS::Cinder::Volume
+    properties:
+      name:
+        str_replace:
+          template: $VNFI-TSLEE-BE-$INSTANCE_NUMBER-data_volume
+          params:
+            $VNFI: { get_param: vnfi_id }
+            $INSTANCE_NUMBER: { get_attr: [ padded_instance_number, value ] }
+      size: { get_param: volume_size }
+
+  volume_attachment:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      instance_uuid: { get_resource: server }
+      volume_id: { get_resource: data_volume }

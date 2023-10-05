@@ -1,0 +1,5 @@
+drwxrwxr-x    4 1000     1000         4096 Feb 09 15:08 .
+drwxr-xr-x   12 1000     1000         4096 Feb 15 21:55 ..
+-rw-r--r--    1 0        0            1996 Feb 09 15:08 eir-lab-openrc.sh
+drwxr-xr-x    6 0        0            4096 Feb 08 20:22 openstackenv
+drwxr-xr-x    6 0        0            4096 Feb 08 23:28 templates

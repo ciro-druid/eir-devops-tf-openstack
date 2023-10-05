@@ -1,0 +1,242 @@
+heat_template_version: 2016-10-14
+
+description: RDBMS VNFC DEPLOY TEMPLATE
+
+parameters:
+
+  ###################################################
+  ## General Parameters
+  ###################################################
+  vnfi_id:
+    type: string
+    description: VNFI name
+    label: VNFI_Name
+    constraints:
+    - length: { min: 1, max: 16 }
+    - allowed_pattern: "[A-Za-z][A-Za-z_0-9-]*"
+  keypair:
+    type: string
+    label: KeyPair
+    description: SSH keypayr to inject in all servers
+  security_group_id:
+    type: string
+    label: SecurityGroupID
+    description: Security group UUID
+  site_code:
+    type: string
+    label: Site Code
+    description: Short site name. For exampl SP, RJ, AMBA.
+  time_zone_code:
+    type: string
+    label: Time Zone Code
+    description: Timezone code. In CentOS7, 'cd /usr/share/zoneinfo; find . -type f'
+  timesync:
+    type: string
+    label: NTP Server List
+    description: NTP server list.
+  cca_config:
+    type: string
+    label: CCA Configuration
+    description: CCA configuration
+  do_signaling_routes:
+    type: string
+    default: "false"
+    description: false or true if signaling ip routes need to be done.
+  external_endpoints:
+    type: string
+    label: External Endpoints
+    description: String con el contenido JSON de extenal endpoints
+  develop:
+    type: boolean
+    default: false
+    description: Only for testing purpose.
+  trap_dest_addrs:
+    type: string
+    label: Trap Destination Address List
+    description: IP where the management system should send traps.
+  vnfcnames:
+    type: json
+    label: Vnfc Names
+    description: Vnfc names renaming
+  networks:
+    type: json
+    label: Local Networks
+    description: This POP networks information
+  inter_site_nets:
+    type: string
+    label: VNF Networks Attributes
+    description: name, site, cidr and gateway of every inter-site network
+  flavors:
+    type: json
+    label: VNF Flavors
+    description: JSON defining flavors names and parameters.
+  cca_ignite_multicast_group:
+    type: string
+    label: CCA Multicast Address
+    default: 228.10.10.160
+    description: UDP multicast address to be used by CCA ignite cluster
+  mgms_ignite_multicast_group:
+    type: string
+    label: MGMS Multicast Address
+    default: 231.1.1.7
+    description: UDP multicast address to be used by MGMS ignite cluster
+  cdr_ignite_multicast_group:
+    type: string
+    label: CDR Multicast Address
+    default: 231.0.1.241
+    description: UDP multicast address to be used by CDR ignite cluster
+  unica:
+    type: boolean
+    description: Set to True if deploying in UNICA environment
+
+  ###################################################
+  ## RDBMS Parameters
+  ###################################################
+  rdbms_image:
+    type: string
+    label: RDBMS Image
+    description: Image name or UUID.
+  rdbms_server_group_id:
+    type: string
+    label: RDBMS Server Group UUID
+    description: RDBMS Server Group UUID (affinity)
+  rdbms_count:
+    type: number
+    label: RDBMS Count
+    description: How many GTW instances to create.
+    constraints:
+      - range: { min: 0 }
+  rdbms_mysql_db_postfix:
+    type: string
+    label: RDBMS Postfix
+    description: prefix to identify database.
+    default: "none"
+  rdbms_mysql_password:
+    type: string
+    label: RDBMS Database Password
+    description: MySQL non root users password.
+  rdbms_mysql_root_password:
+    type: string
+    label: RDBMS Database Root Password
+    description: MySQL root user password.
+  rdbms_cluster_node_ips:
+    type: string
+    label: RDBMS Cluster IP List
+    description: comma separated list of ALL mysql addresses.
+  rdbms_nodes:
+    type: json
+    label: RDBMS VM Attribute List
+    description: OM and Signaling network addresses. It is an array of rdbms_count elements.
+  innodb_buffer_pool_instances:
+    type: string
+    label: RDBMS MySQL innodb_buffer_pool_instances Parameter
+  innodb_buffer_pool_size:
+    type: string
+  wsrep_provider_options:
+    type: string
+    description: Options to set in my.cnf
+  rdbms_kpi_tz_offset:
+    type: string
+    label: TZ OFFSET
+    description: KPI TimeZone OFFSET
+  rdbms_organization_name:
+    type: string
+  rdbms_organization_description:
+    type: string
+
+conditions:
+
+  rdbms_count_is_grater_than_zero:
+    not:
+      equals:
+      - { get_param: rdbms_count }
+      - 0
+
+resources:
+
+  ###################################################
+  ## Workaround and other heat values
+  ###################################################
+  develop_flag:
+    type: OS::Heat::Value
+    properties:
+      type: boolean
+      value:
+        yaql:
+          expression: bool($.data.value)
+          data:
+            value: { get_param: develop }
+
+  cca_local_quorum:
+    type: OS::Heat::Value
+    properties:
+      type: number
+      value:
+        yaql:
+          expression: ( ( int($.data.value0) + int($.data.value1) ) / 2 ) + 1
+          data:
+            value0: 2
+            value1: 2
+
+
+  ###################################################
+  ## Call to RDBMS HEAT Template
+  ###################################################
+  rdbms_group:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count:  { get_param: rdbms_count }
+      resource_def:
+        type: ../VNFC-Files/RDBMS-VNFC.yaml
+        properties:
+          vnfi_id: { get_param: vnfi_id }
+          index: '%index%'
+          security_group: { get_param: security_group_id }
+          keypair: { get_param: keypair }
+          site_code: { get_param: site_code }
+          time_zone_code: { get_param: time_zone_code }
+          timesync: { get_param: timesync }
+          cca_config: { get_param: cca_config }
+          image: { get_param: rdbms_image }
+          flavor: { get_param: [ flavors, RDBMS, name ] }
+          om_net: { get_param: [ networks, OM, netname ] }
+          om_subnet: { get_param: [ networks, OM, subnetname ] }
+          om_mode: { get_param: [ networks, OM, mode ] }
+          om_netaddr: { get_param: [ networks, OM, netaddr ] }
+          om_prefix: { get_param: [ networks, OM, prefix ] }
+          om_gateway: { get_param: [ networks, OM, gateway ] }
+          dbrep_net: { get_param: [ networks, DBREP, netname ] }
+          dbrep_subnet: { get_param: [ networks, DBREP, subnetname ] }
+          dbrep_mode: { get_param: [ networks, DBREP, mode ] }
+          dbrep_netaddr: { get_param: [ networks, DBREP, netaddr ] }
+          dbrep_prefix: { get_param: [ networks, DBREP, prefix ] }
+          dbrep_gateway: { get_param: [ networks, DBREP, gateway ] }
+          ssh_net: { get_param: [ networks, SSH, netname ] }
+          ssh_subnet: { get_param: [ networks, SSH, subnetname ] }
+          ssh_mode: { get_param: [ networks, SSH, mode ] }
+          ssh_netaddr: { get_param: [ networks, SSH, netaddr ] }
+          ssh_prefix: { get_param: [ networks, SSH, prefix ] }
+          ssh_gateway: { get_param: [ networks, SSH, gateway ] }
+          cluster_node_ips: { get_param: rdbms_cluster_node_ips }
+          mysql_db_postfix: { get_param: rdbms_mysql_db_postfix }
+          mysql_password: { get_param: rdbms_mysql_password }
+          mysql_root_password: { get_param: rdbms_mysql_root_password }
+          wc_notify: 'echo'
+          external_endpoints: { get_param: external_endpoints }
+          server_group: { get_param: rdbms_server_group_id }
+          develop: { get_attr: [ develop_flag, value ] }
+          inter_site_nets: { get_param: inter_site_nets }
+          innodb_buffer_pool_instances: { get_param: innodb_buffer_pool_instances }
+          innodb_buffer_pool_size: { get_param: innodb_buffer_pool_size }
+          local_quorum: { get_attr:  [ cca_local_quorum, value ] }
+          cca_ignite_multicast_group: { get_param: cca_ignite_multicast_group }
+          mgms_ignite_multicast_group: { get_param: mgms_ignite_multicast_group }
+          cdr_ignite_multicast_group: { get_param: cdr_ignite_multicast_group }
+          nodes: { get_param: rdbms_nodes }
+          networks: { get_param: networks }
+          unica: { get_param: unica }
+          wsrep_provider_options: { get_param: wsrep_provider_options }
+          rdbms_kpi_tz_offset: { get_param: rdbms_kpi_tz_offset }
+          rdbms_organization_name: { get_param: rdbms_organization_name }
+          rdbms_organization_description: { get_param: rdbms_organization_description }
+          vnfcnames: {get_param: vnfcnames}

@@ -1,0 +1,15 @@
+drwxr-xr-x    2 0        0            4096 Mar 28 14:48 .
+drwxr-xr-x    6 0        0            4096 Feb 08 23:28 ..
+-rw-r--r--    1 0        0           19492 Feb 08 20:28 CDR-VNFC.yaml
+-rw-r--r--    1 0        0           16072 Feb 09 16:22 EIRBE-VNFC.yaml
+-rw-r--r--    1 0        0           16077 Feb 09 16:22 EIRPMS-VNFC.yaml
+-rw-r--r--    1 0        0           22386 Feb 14 20:51 GTW-VNFC-SIM.yaml
+-rw-r--r--    1 0        0           22386 Feb 08 20:28 GTW-VNFC.yaml
+-rw-r--r--    1 0        0           16284 Feb 08 20:28 IMDB-VNFC.yaml
+-rw-r--r--    1 0        0           24709 Mar 21 18:48 JBOSS-TSLEE-VNFC-SIM.yaml
+-rw-r--r--    1 0        0           19574 Mar 28 14:48 KMS-VNFC.yaml
+-rw-r--r--    1 0        0           27612 Feb 08 20:28 MGMS-VNFC.yaml
+-rw-r--r--    1 0        0           16054 Feb 09 16:22 MS-VNFC.yaml
+-rw-r--r--    1 0        0           20293 Feb 08 20:28 RDBMS-VNFC.yaml
+-rw-r--r--    1 0        0           24655 Feb 14 20:51 TSLEE-VNFC-SIM.yaml
+-rw-r--r--    1 0        0           24655 Feb 08 20:28 TSLEE-VNFC.yaml
